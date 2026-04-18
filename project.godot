@@ -7,7 +7,7 @@ config_version=5
 
 config/name="SUCC"
 config/description="SurfsUp Character Controller — standalone dev project. The addon itself lives in addons/SUCC/."
-run/main_scene="res://demo/test_level.tscn"
+run/main_scene="res://addons/SUCC/demo/test_level.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 
 [editor_plugins]
