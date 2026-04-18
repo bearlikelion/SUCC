@@ -1,25 +1,61 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene format=3 uid="uid://dyx826m71ip5e"]
 
-[ext_resource type="Script" path="res://addons/SUCC/scripts/succ.gd" id="1_succ"]
-[ext_resource type="Script" path="res://addons/SUCC/scripts/succ_camera.gd" id="2_cam"]
+[ext_resource type="Script" uid="uid://hv8t2ynrtd5e" path="res://addons/SUCC/scripts/succ.gd" id="1_succ"]
+[ext_resource type="Script" uid="uid://cie81viouwiyw" path="res://addons/SUCC/scripts/succ_camera.gd" id="2_cam"]
 [ext_resource type="Resource" path="res://addons/SUCC/resources/default_config.tres" id="3_cfg"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_1"]
 size = Vector3(0.813, 1.829, 0.813)
 
-[node name="SUCCCharacter" type="CharacterBody3D"]
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_62fc2"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_62fc2"]
+distance_fade_mode = 1
+distance_fade_min_distance = 1.0
+distance_fade_max_distance = 1.25
+
+[sub_resource type="BoxMesh" id="BoxMesh_0elpp"]
+size = Vector3(0.5, 0.1, 0.2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_07xoh"]
+albedo_color = Color(0.2784314, 0.54901963, 0.7490196, 1)
+distance_fade_mode = 1
+distance_fade_min_distance = 1.0
+distance_fade_max_distance = 1.25
+
+[node name="SUCCCharacter" type="CharacterBody3D" unique_id=759156532]
 script = ExtResource("1_succ")
 config = ExtResource("3_cfg")
+input_actions = {
+"back": "back",
+"crouch": "crouch",
+"duck": "duck",
+"forward": "forward",
+"jump": "jump",
+"left": "left",
+"right": "right",
+"sprint": "sprint"
+}
 
-[node name="Collision" type="CollisionShape3D" parent="."]
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1635607958]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9145, 0)
 shape = SubResource("BoxShape3D_1")
 
-[node name="CameraRig" type="SpringArm3D" parent="."]
+[node name="CameraRig" type="SpringArm3D" parent="." unique_id=1876563887]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.711, 0)
 spring_length = 0.0
 script = ExtResource("2_cam")
 
-[node name="Camera3D" type="Camera3D" parent="CameraRig"]
+[node name="Camera3D" type="Camera3D" parent="CameraRig" unique_id=1482788189]
 current = true
 fov = 90.0
+
+[node name="CSGMesh3D" type="CSGMesh3D" parent="." unique_id=990687593]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+mesh = SubResource("CapsuleMesh_62fc2")
+material = SubResource("StandardMaterial3D_62fc2")
+
+[node name="CSGMesh3D2" type="CSGMesh3D" parent="CSGMesh3D" unique_id=1566782825]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -0.5)
+mesh = SubResource("BoxMesh_0elpp")
+material = SubResource("StandardMaterial3D_07xoh")

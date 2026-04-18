@@ -116,5 +116,6 @@ layout_mode = 2
 text = "State: IDLE"
 
 [node name="Hint" type="Label" parent="UI/VBox" unique_id=633692235]
+unique_name_in_owner = true
 layout_mode = 2
-text = "WASD move | Space jump | Ctrl duck | C crouch | Shift sprint | V camera | Esc mouse"
+text = "<INPUT INSTRUCTIONS HINT>"
