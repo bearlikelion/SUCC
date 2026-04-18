@@ -91,7 +91,7 @@ func _get_configuration_warnings() -> PackedStringArray:
 	var warnings: PackedStringArray = []
 	for logical: String in DEFAULT_INPUT_ACTIONS.keys():
 		var action: String = input_actions.get(logical, DEFAULT_INPUT_ACTIONS[logical])
-		if not InputMap.has_action(action):
+		if not _action_exists_in_project(action):
 			warnings.append("Input action '%s' (logical '%s') is not in the project's InputMap. This movement will be disabled at runtime." % [action, logical])
 	if not has_node("Collision"):
 		warnings.append("Missing child CollisionShape3D named 'Collision'.")
@@ -450,6 +450,15 @@ func _validate_input_actions() -> void:
 		_action_available[logical] = ok
 		if not ok:
 			push_warning("SUCC: input action '%s' (logical '%s') not defined; disabling." % [action, logical])
+
+
+# @tool-safe InputMap check. InputMap in the editor doesn't always reflect
+# project.godot actions when _get_configuration_warnings() runs, so fall back
+# to ProjectSettings which is authoritative.
+func _action_exists_in_project(action: String) -> bool:
+	if InputMap.has_action(action):
+		return true
+	return ProjectSettings.has_setting("input/" + action)
 
 
 func _action_strength(logical: String) -> float:

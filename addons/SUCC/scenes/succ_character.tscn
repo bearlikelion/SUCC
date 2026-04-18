@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://hv8t2ynrtd5e" path="res://addons/SUCC/scripts/succ.gd" id="1_succ"]
 [ext_resource type="Script" uid="uid://cie81viouwiyw" path="res://addons/SUCC/scripts/succ_camera.gd" id="2_cam"]
-[ext_resource type="Resource" path="res://addons/SUCC/resources/default_config.tres" id="3_cfg"]
+[ext_resource type="Resource" uid="uid://dff56twp2y8nx" path="res://addons/SUCC/resources/default_config.tres" id="3_cfg"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_1"]
 size = Vector3(0.813, 1.829, 0.813)
