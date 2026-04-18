@@ -18,6 +18,26 @@ signal mode_changed(mode: int)
 var _accumulated: Vector2 = Vector2.ZERO
 
 
+# Optional Camera3D child of this SpringArm3D. When present, SUCC applies a
+# transient vertical offset to it to smooth out step-up/down snaps.
+@onready var camera: Camera3D = _find_camera()
+
+
+func _find_camera() -> Camera3D:
+	for child: Node in get_children():
+		if child is Camera3D:
+			return child
+		for grandchild: Node in child.get_children():
+			if grandchild is Camera3D:
+				return grandchild
+	return null
+
+
+func set_step_offset(offset: float) -> void:
+	if camera:
+		camera.position.y = offset
+
+
 func handle_input(event: InputEvent, config: SUCCConfig) -> void:
 	if not (event is InputEventMouseMotion):
 		return

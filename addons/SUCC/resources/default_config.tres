@@ -24,5 +24,7 @@ crouch_view_offset = 0.796
 mouse_sensitivity = 3.0
 degrees_per_unit = 0.022
 third_person_distance = 2.0
+smooth_vertical_step = true
+step_smoothing_speed = 15.0
 bhop_buffered_jump = true
 surf_jump_retention = 1.0

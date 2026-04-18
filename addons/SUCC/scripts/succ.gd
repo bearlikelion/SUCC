@@ -63,6 +63,9 @@ var crouched: bool = false
 var was_on_floor: bool = false
 var _action_available: Dictionary = {}
 var _crouch_tween: Tween
+# Vertical offset applied to camera_rig to smooth out step-up/down snaps.
+# Set when the body's Y changes abruptly; decayed toward 0 each frame in _process.
+var _camera_step_offset: float = 0.0
 
 
 # ------------------------------------------------------------------ lifecycle
@@ -140,6 +143,19 @@ func _physics_process(delta: float) -> void:
 	_set_velocity(delta)
 	_move_body()
 	_update_movement_state()
+
+
+func _process(delta: float) -> void:
+	if Engine.is_editor_hint() or camera_rig == null:
+		return
+	# Decay the camera step offset toward zero so the camera smoothly catches up
+	# to the body after a step-up or step-down.
+	if config.smooth_vertical_step and not is_equal_approx(_camera_step_offset, 0.0):
+		var t: float = clamp(config.step_smoothing_speed * delta, 0.0, 1.0)
+		_camera_step_offset = lerp(_camera_step_offset, 0.0, t)
+		if abs(_camera_step_offset) < 0.001:
+			_camera_step_offset = 0.0
+		camera_rig.set_step_offset(_camera_step_offset)
 
 
 func _apply_gravity(delta: float) -> void:
@@ -233,6 +249,14 @@ func _move_body() -> void:
 		var slide_direction: Vector3 = get_last_slide_collision().get_normal()
 		velocity = velocity.slide(slide_direction)
 
+	# Smooth floor-snap step-downs: if we were on the floor and stayed on the floor
+	# but our Y dropped sharply (stair descent via floor_snap_length), seed the camera.
+	if config.smooth_vertical_step and was_on_floor and is_on_floor():
+		var y_drop: float = pre_move_pos.y - global_position.y
+		if y_drop > 0.05:
+			_camera_step_offset += y_drop
+			_camera_step_offset = clamp(_camera_step_offset, -config.step_height * 1.1, config.step_height * 1.1)
+
 	if is_on_floor() and not was_on_floor:
 		landed.emit(prev_vy)
 	was_on_floor = is_on_floor()
@@ -275,6 +299,11 @@ func _try_step_up(_pre_move_pos: Vector3, pre_move_horz_speed: float) -> void:
 		return
 
 	global_transform.origin += down_hit.get_travel() + Vector3(0.0, FLOOR_COL_MARGIN, 0.0)
+	# Seed the camera offset with the inverse of the body's Y change so the camera
+	# visually stays put for a moment and smoothly catches up (see _process).
+	if config.smooth_vertical_step:
+		_camera_step_offset += start_xform.origin.y - global_position.y
+		_camera_step_offset = clamp(_camera_step_offset, -config.step_height * 1.1, config.step_height * 1.1)
 	# Kill upward velocity so step-up doesn't feel like a bounce.
 	if velocity.y > 0.0:
 		velocity.y = 0.0
