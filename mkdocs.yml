@@ -6,32 +6,48 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
+  font:
+    text: Inter
+    code: JetBrains Mono
   features:
     - navigation.sections
     - navigation.expand
+    - navigation.top
+    - navigation.tracking
+    - toc.follow
+    - search.suggest
+    - search.highlight
     - content.code.copy
     - content.code.annotate
   palette:
-    - scheme: default
-      primary: deep purple
-      accent: amber
-      toggle:
-        icon: material/weather-night
-        name: Dark mode
-    - scheme: slate
-      primary: deep purple
-      accent: amber
+    - scheme: gruvbox-dark
       toggle:
         icon: material/weather-sunny
         name: Light mode
+    - scheme: gruvbox-light
+      toggle:
+        icon: material/weather-night
+        name: Dark mode
+  icon:
+    repo: fontawesome/brands/github
+
+extra_css:
+  - stylesheets/gruvbox.css
 
 markdown_extensions:
   - admonition
   - pymdownx.details
   - pymdownx.superfences
-  - pymdownx.highlight
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
   - pymdownx.tabbed:
       alternate_style: true
+  - pymdownx.snippets
+  - attr_list
+  - md_in_html
   - toc:
       permalink: true
 

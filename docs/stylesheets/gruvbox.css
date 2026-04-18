@@ -1,0 +1,219 @@
+/* Gruvbox palette - https://github.com/morhetz/gruvbox */
+
+:root {
+	--gb-dark0-hard:   #1d2021;
+	--gb-dark0:        #282828;
+	--gb-dark0-soft:   #32302f;
+	--gb-dark1:        #3c3836;
+	--gb-dark2:        #504945;
+	--gb-dark3:        #665c54;
+	--gb-dark4:        #7c6f64;
+
+	--gb-light0-hard:  #f9f5d7;
+	--gb-light0:       #fbf1c7;
+	--gb-light0-soft:  #f2e5bc;
+	--gb-light1:       #ebdbb2;
+	--gb-light2:       #d5c4a1;
+	--gb-light3:       #bdae93;
+	--gb-light4:       #a89984;
+
+	--gb-red:          #cc241d;
+	--gb-red-bright:   #fb4934;
+	--gb-green:        #98971a;
+	--gb-green-bright: #b8bb26;
+	--gb-yellow:       #d79921;
+	--gb-yellow-bright:#fabd2f;
+	--gb-blue:         #458588;
+	--gb-blue-bright:  #83a598;
+	--gb-purple:       #b16286;
+	--gb-purple-bright:#d3869b;
+	--gb-aqua:         #689d6a;
+	--gb-aqua-bright:  #8ec07c;
+	--gb-orange:       #d65d0e;
+	--gb-orange-bright:#fe8019;
+	--gb-gray:         #928374;
+}
+
+/* Dark scheme (default) */
+[data-md-color-scheme="gruvbox-dark"] {
+	--md-default-bg-color:         var(--gb-dark0);
+	--md-default-bg-color--light:  var(--gb-dark0-soft);
+	--md-default-bg-color--lighter:var(--gb-dark1);
+	--md-default-bg-color--lightest:var(--gb-dark2);
+
+	--md-default-fg-color:         var(--gb-light1);
+	--md-default-fg-color--light:  var(--gb-light2);
+	--md-default-fg-color--lighter:var(--gb-light3);
+	--md-default-fg-color--lightest:var(--gb-dark2);
+
+	--md-primary-fg-color:          var(--gb-dark0-hard);
+	--md-primary-fg-color--light:   var(--gb-dark1);
+	--md-primary-fg-color--dark:    var(--gb-dark0-hard);
+	--md-primary-bg-color:          var(--gb-light1);
+	--md-primary-bg-color--light:   var(--gb-light2);
+
+	--md-accent-fg-color:           var(--gb-orange-bright);
+	--md-accent-fg-color--transparent: rgba(254, 128, 25, 0.1);
+	--md-accent-bg-color:           var(--gb-dark0);
+	--md-accent-bg-color--light:    var(--gb-dark0-soft);
+
+	--md-typeset-color:             var(--gb-light1);
+	--md-typeset-a-color:            var(--gb-yellow-bright);
+
+	--md-code-bg-color:             var(--gb-dark0-hard);
+	--md-code-fg-color:             var(--gb-light2);
+	--md-code-hl-color:             rgba(250, 189, 47, 0.2);
+	--md-code-hl-number-color:      var(--gb-purple-bright);
+	--md-code-hl-special-color:     var(--gb-red-bright);
+	--md-code-hl-function-color:    var(--gb-green-bright);
+	--md-code-hl-constant-color:    var(--gb-purple-bright);
+	--md-code-hl-keyword-color:     var(--gb-red-bright);
+	--md-code-hl-string-color:      var(--gb-green-bright);
+	--md-code-hl-name-color:        var(--gb-blue-bright);
+	--md-code-hl-operator-color:    var(--gb-aqua-bright);
+	--md-code-hl-punctuation-color: var(--gb-light3);
+	--md-code-hl-comment-color:     var(--gb-gray);
+	--md-code-hl-generic-color:     var(--gb-light3);
+	--md-code-hl-variable-color:    var(--gb-blue-bright);
+
+	--md-admonition-bg-color:       var(--gb-dark0-soft);
+	--md-admonition-fg-color:       var(--gb-light1);
+
+	--md-footer-bg-color:           var(--gb-dark0-hard);
+	--md-footer-bg-color--dark:     #151617;
+	--md-footer-fg-color:           var(--gb-light2);
+	--md-footer-fg-color--light:    var(--gb-light3);
+	--md-footer-fg-color--lighter:  var(--gb-dark4);
+}
+
+/* Light scheme */
+[data-md-color-scheme="gruvbox-light"] {
+	--md-default-bg-color:         var(--gb-light0);
+	--md-default-bg-color--light:  var(--gb-light0-soft);
+	--md-default-bg-color--lighter:var(--gb-light1);
+	--md-default-bg-color--lightest:var(--gb-light2);
+
+	--md-default-fg-color:         var(--gb-dark1);
+	--md-default-fg-color--light:  var(--gb-dark2);
+	--md-default-fg-color--lighter:var(--gb-dark3);
+	--md-default-fg-color--lightest:var(--gb-light3);
+
+	--md-primary-fg-color:          var(--gb-light0-hard);
+	--md-primary-fg-color--light:   var(--gb-light1);
+	--md-primary-fg-color--dark:    var(--gb-light0-hard);
+	--md-primary-bg-color:          var(--gb-dark1);
+	--md-primary-bg-color--light:   var(--gb-dark2);
+
+	--md-accent-fg-color:           var(--gb-orange);
+	--md-accent-fg-color--transparent: rgba(214, 93, 14, 0.1);
+	--md-accent-bg-color:           var(--gb-light0);
+	--md-accent-bg-color--light:    var(--gb-light0-soft);
+
+	--md-typeset-color:             var(--gb-dark1);
+	--md-typeset-a-color:            var(--gb-blue);
+
+	--md-code-bg-color:             var(--gb-light0-soft);
+	--md-code-fg-color:             var(--gb-dark2);
+	--md-code-hl-color:             rgba(215, 153, 33, 0.2);
+	--md-code-hl-number-color:      var(--gb-purple);
+	--md-code-hl-special-color:     var(--gb-red);
+	--md-code-hl-function-color:    var(--gb-green);
+	--md-code-hl-constant-color:    var(--gb-purple);
+	--md-code-hl-keyword-color:     var(--gb-red);
+	--md-code-hl-string-color:      var(--gb-green);
+	--md-code-hl-name-color:        var(--gb-blue);
+	--md-code-hl-operator-color:    var(--gb-aqua);
+	--md-code-hl-punctuation-color: var(--gb-dark3);
+	--md-code-hl-comment-color:     var(--gb-gray);
+	--md-code-hl-generic-color:     var(--gb-dark3);
+	--md-code-hl-variable-color:    var(--gb-blue);
+
+	--md-admonition-bg-color:       var(--gb-light0-soft);
+	--md-admonition-fg-color:       var(--gb-dark1);
+
+	--md-footer-bg-color:           var(--gb-dark1);
+	--md-footer-bg-color--dark:     var(--gb-dark0);
+	--md-footer-fg-color:           var(--gb-light1);
+	--md-footer-fg-color--light:    var(--gb-light2);
+	--md-footer-fg-color--lighter:  var(--gb-dark4);
+}
+
+/* Typography */
+body,
+.md-typeset {
+	font-feature-settings: "ss01", "cv11";
+}
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4,
+.md-typeset h5,
+.md-typeset h6 {
+	font-weight: 700;
+	letter-spacing: -0.01em;
+}
+
+.md-typeset h1 { color: var(--gb-orange-bright); }
+[data-md-color-scheme="gruvbox-light"] .md-typeset h1 { color: var(--gb-orange); }
+
+.md-typeset h2 { color: var(--gb-yellow-bright); border-bottom: 1px solid var(--md-default-bg-color--lightest); padding-bottom: 0.2em; }
+[data-md-color-scheme="gruvbox-light"] .md-typeset h2 { color: var(--gb-yellow); }
+
+.md-typeset h3 { color: var(--gb-aqua-bright); }
+[data-md-color-scheme="gruvbox-light"] .md-typeset h3 { color: var(--gb-aqua); }
+
+.md-typeset code,
+.md-typeset pre,
+.md-typeset kbd {
+	font-family: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-feature-settings: "calt", "liga";
+	font-size: 0.82em;
+}
+
+.md-typeset code {
+	border-radius: 4px;
+	padding: 0.1em 0.35em;
+}
+
+.md-typeset pre > code {
+	padding: 1em;
+	border-radius: 6px;
+	border: 1px solid var(--md-default-bg-color--lightest);
+}
+
+/* Links */
+.md-typeset a {
+	text-decoration: none;
+	border-bottom: 1px dotted currentColor;
+}
+.md-typeset a:hover {
+	color: var(--md-accent-fg-color);
+	border-bottom-style: solid;
+}
+
+/* Tables */
+.md-typeset table:not([class]) {
+	border: 1px solid var(--md-default-bg-color--lightest);
+	border-radius: 4px;
+	overflow: hidden;
+}
+.md-typeset table:not([class]) th {
+	background-color: var(--md-default-bg-color--lighter);
+	color: var(--gb-yellow-bright);
+}
+[data-md-color-scheme="gruvbox-light"] .md-typeset table:not([class]) th {
+	color: var(--gb-orange);
+}
+
+/* Header */
+.md-header {
+	box-shadow: 0 0 0.2rem rgba(0,0,0,0.2);
+}
+
+/* Sidebar nav active highlight */
+.md-nav__link--active,
+.md-nav__link:active {
+	color: var(--md-accent-fg-color);
+	font-weight: 600;
+}
