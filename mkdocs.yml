@@ -1,0 +1,47 @@
+site_name: SUCC — SurfsUp Character Controller
+site_description: Multiplayer-focused, inheritable, state-based character controller for Godot 4.
+site_url: https://markarneman.github.io/SUCC/
+repo_url: https://github.com/markarneman/SUCC
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+    - content.code.annotate
+  palette:
+    - scheme: default
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/weather-night
+        name: Dark mode
+    - scheme: slate
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/weather-sunny
+        name: Light mode
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.tabbed:
+      alternate_style: true
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - Extending SUCC: extending.md
+  - Networking: networking.md
+  - API Reference:
+    - SUCC: api/succ.md
+    - SUCCPawn: api/succ_pawn.md
+    - SUCCConfig: api/succ_config.md
+    - SUCCCamera: api/succ_camera.md

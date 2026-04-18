@@ -1,0 +1,25 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://addons/SUCC/scripts/succ.gd" id="1_succ"]
+[ext_resource type="Script" path="res://addons/SUCC/scripts/succ_camera.gd" id="2_cam"]
+[ext_resource type="Resource" path="res://addons/SUCC/resources/default_config.tres" id="3_cfg"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1"]
+size = Vector3(0.813, 1.829, 0.813)
+
+[node name="SUCCCharacter" type="CharacterBody3D"]
+script = ExtResource("1_succ")
+config = ExtResource("3_cfg")
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9145, 0)
+shape = SubResource("BoxShape3D_1")
+
+[node name="CameraRig" type="SpringArm3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.711, 0)
+spring_length = 0.0
+script = ExtResource("2_cam")
+
+[node name="Camera3D" type="Camera3D" parent="CameraRig"]
+current = true
+fov = 90.0
