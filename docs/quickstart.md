@@ -23,9 +23,9 @@ Missing actions produce a configuration warning on the `SUCC` node in the editor
 
 ## 3. Instance or inherit the base scene
 
-**Option A — Instance** (quickest): drop `addons/SUCC/scenes/succ_character.tscn` into your level.
+**Option A - Instance** (quickest): drop `addons/SUCC/scenes/succ_character.tscn` into your level.
 
-**Option B — Inherit** (recommended for games):
+**Option B - Inherit** (recommended for games):
 
 1. Right-click `succ_character.tscn` → **New Inherited Scene**.
 2. Save as `player.tscn` in your project.

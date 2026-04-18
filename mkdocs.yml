@@ -1,4 +1,4 @@
-site_name: SUCC — SurfsUp Character Controller
+site_name: SUCC - SurfsUp Character Controller
 site_description: Multiplayer-focused, inheritable, state-based character controller for Godot 4.
 site_url: https://markarneman.github.io/SUCC/
 repo_url: https://github.com/markarneman/SUCC
@@ -45,3 +45,5 @@ nav:
     - SUCCPawn: api/succ_pawn.md
     - SUCCConfig: api/succ_config.md
     - SUCCCamera: api/succ_camera.md
+  - Games Built with SUCC: games.md
+  - Acknowledgements: acknowledgements.md

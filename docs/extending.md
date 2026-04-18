@@ -1,6 +1,6 @@
 # Extending SUCC
 
-SUCC is designed to be extended via inheritance. The base class is intentionally minimal — movement, camera, state hooks, and nothing else.
+SUCC is designed to be extended via inheritance. The base class is intentionally minimal - movement, camera, state hooks, and nothing else.
 
 ## Overridable methods
 
@@ -39,7 +39,7 @@ Toggle the `enable_bhop` and `enable_surf` exports. Both default to `true` for S
 
 ### Game-specific state (health, ammo, roles)
 
-Extend in your subclass — SUCC doesn't prescribe how you model game state:
+Extend in your subclass - SUCC doesn't prescribe how you model game state:
 
 ```gdscript
 class_name FPSPlayer extends SUCC

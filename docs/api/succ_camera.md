@@ -10,7 +10,7 @@ Camera rig used by `SUCC`. Handles mouse look (yaw rotates the parent `SUCC`; pi
 
 ## Signals
 
-- `mode_changed(mode: int)` — emitted on camera mode switch. Consumers can hook this to hide/show the player model in first/third person.
+- `mode_changed(mode: int)` - emitted on camera mode switch. Consumers can hook this to hide/show the player model in first/third person.
 
 ## Methods
 

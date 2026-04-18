@@ -1,6 +1,6 @@
 # Networking
 
-SUCC is transport-agnostic — it works with any `MultiplayerPeer` (ENet, WebSocket, GodotSteam, etc.).
+SUCC is transport-agnostic - it works with any `MultiplayerPeer` (ENet, WebSocket, GodotSteam, etc.).
 
 ## Authority model
 
@@ -13,11 +13,11 @@ player.set_multiplayer_authority(peer_id)
 add_child(player, true)
 ```
 
-If `is_multiplayer_authority()` is `false`, SUCC skips input gathering and physics — it becomes inert.
+If `is_multiplayer_authority()` is `false`, SUCC skips input gathering and physics - it becomes inert.
 
 ## Pawn pattern
 
-`SUCCPawn` is a stripped-down remote-peer representation. It doesn't run input or camera logic — it just interpolates a synced transform and state from the authority.
+`SUCCPawn` is a stripped-down remote-peer representation. It doesn't run input or camera logic - it just interpolates a synced transform and state from the authority.
 
 Spawn one pawn per remote peer, with the pawn's authority set to the owning peer:
 
@@ -48,12 +48,12 @@ On your subclass pawn scene:
 
 The authority is responsible for pushing its state onto the matching remote pawn. Most games keep the authority SUCC and the remote SUCCPawn in separate scene trees (the authority sees *only* its own SUCC; remotes see *only* pawns for others). The authority RPCs its state to peers; the synchronizer handles the actual transport.
 
-A simple pattern: give each player a paired `(SUCC, SUCCPawn)` — authority updates its pawn's `synced_*` fields every physics tick, and the synchronizer replicates them to non-authority peers.
+A simple pattern: give each player a paired `(SUCC, SUCCPawn)` - authority updates its pawn's `synced_*` fields every physics tick, and the synchronizer replicates them to non-authority peers.
 
 ## Integrations
 
-- **ENet** — works out of the box.
-- **GodotSteam** (`SteamMultiplayerPeer`) — works; SUCC has no Steam-specific code.
-- **WebRTC / WebSocket** — works.
+- **ENet** - works out of the box.
+- **GodotSteam** (`SteamMultiplayerPeer`) - works; SUCC has no Steam-specific code.
+- **WebRTC / WebSocket** - works.
 
 SUCC deliberately ships no lobby, matchmaking, or transport code. Those are the consuming game's responsibility.

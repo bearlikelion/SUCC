@@ -1,12 +1,12 @@
 ; Engine configuration file for SUCC standalone dev/test project.
-; The shipped addon lives in addons/SUCC/ — this file just lets us open the repo in Godot directly.
+; The shipped addon lives in addons/SUCC/ - this file just lets us open the repo in Godot directly.
 
 config_version=5
 
 [application]
 
 config/name="SUCC"
-config/description="SurfsUp Character Controller — standalone dev project. The addon itself lives in addons/SUCC/."
+config/description="SurfsUp Character Controller - standalone dev project. The addon itself lives in addons/SUCC/."
 run/main_scene="res://addons/SUCC/demo/test_level.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 

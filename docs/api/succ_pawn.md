@@ -8,13 +8,13 @@ Remote-peer representation. Receives synced transform/state; runs no input or ph
 |---|---|---|---|
 | `interpolate` | `bool` | `true` | Lerp toward synced pose for smoothing. |
 | `interpolation_speed` | `float` | `15.0` | Lerp factor per second. |
-| `synced_position` | `Vector3` | — | Replicated world position. |
-| `synced_yaw` | `float` | — | Replicated body rotation (Y axis). |
-| `synced_pitch` | `float` | — | Replicated camera pitch. |
-| `synced_velocity` | `Vector3` | — | For anim blending. |
-| `synced_movement_state` | `int` | — | Mirrors authority's `MovementState`. |
-| `synced_game_state` | `int` | — | Mirrors authority's `GameState`. |
-| `synced_crouched` | `bool` | — | Mirrors authority's crouch flag. |
+| `synced_position` | `Vector3` | - | Replicated world position. |
+| `synced_yaw` | `float` | - | Replicated body rotation (Y axis). |
+| `synced_pitch` | `float` | - | Replicated camera pitch. |
+| `synced_velocity` | `Vector3` | - | For anim blending. |
+| `synced_movement_state` | `int` | - | Mirrors authority's `MovementState`. |
+| `synced_game_state` | `int` | - | Mirrors authority's `GameState`. |
+| `synced_crouched` | `bool` | - | Mirrors authority's crouch flag. |
 
 ## Extending
 
