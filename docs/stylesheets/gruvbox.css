@@ -211,9 +211,34 @@ body,
 	box-shadow: 0 0 0.2rem rgba(0,0,0,0.2);
 }
 
-/* Sidebar nav active highlight */
+/* Sidebar + table of contents: dim so body text reads as primary */
+[data-md-color-scheme="gruvbox-dark"] .md-nav__link,
+[data-md-color-scheme="gruvbox-dark"] .md-nav__title {
+	color: var(--gb-light4);
+}
+[data-md-color-scheme="gruvbox-dark"] .md-nav__link:hover {
+	color: var(--gb-light2);
+}
+
+[data-md-color-scheme="gruvbox-light"] .md-nav__link,
+[data-md-color-scheme="gruvbox-light"] .md-nav__title {
+	color: var(--gb-dark4);
+}
+[data-md-color-scheme="gruvbox-light"] .md-nav__link:hover {
+	color: var(--gb-dark2);
+}
+
+/* Section headings in the sidebar stay readable but quiet */
+.md-nav__title {
+	font-weight: 700;
+	letter-spacing: 0.02em;
+}
+
+/* Active / current page link keeps the accent pop */
 .md-nav__link--active,
+.md-nav__link--active > .md-nav__link,
+.md-nav__item--active > .md-nav__link,
 .md-nav__link:active {
-	color: var(--md-accent-fg-color);
+	color: var(--md-accent-fg-color) !important;
 	font-weight: 600;
 }
