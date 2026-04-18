@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://tn8f8hwndc2j"]
 
-[ext_resource type="PackedScene" path="res://addons/SUCC/scenes/succ_character.tscn" id="1_player"]
+[ext_resource type="PackedScene" uid="uid://dyx826m71ip5e" path="res://addons/SUCC/scenes/succ_character.tscn" id="1_player"]
 [ext_resource type="Script" uid="uid://bdssrppl6wfw3" path="res://addons/SUCC/demo/test_level.gd" id="2_level"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_ahl2s"]
@@ -13,14 +13,8 @@ background_mode = 2
 sky = SubResource("Sky_2")
 ambient_light_energy = 0.5
 
-[sub_resource type="BoxShape3D" id="Box_Floor"]
-size = Vector3(80, 1, 80)
-
 [sub_resource type="StandardMaterial3D" id="Mat_Gray"]
 albedo_color = Color(0.5, 0.5, 0.55, 1)
-
-[sub_resource type="BoxMesh" id="Mesh_Floor"]
-size = Vector3(80, 1, 80)
 
 [node name="TestLevel" type="Node3D" unique_id=1347613809]
 script = ExtResource("2_level")
@@ -29,72 +23,12 @@ script = ExtResource("2_level")
 environment = SubResource("Env_1")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1353457586]
-transform = Transform3D(0.866025, -0.25, 0.433013, 0, 0.866025, 0.5, -0.5, -0.433013, 0.75, 0, 20, 0)
+transform = Transform3D(0.86602503, -0.4330126, 0.25, 0, 0.49999982, 0.86602557, -0.4999998, -0.74999976, 0.43301272, 0, 20, 0)
 shadow_enabled = true
-
-[node name="Floor" type="StaticBody3D" parent="." unique_id=943677473]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor" unique_id=677014359]
-shape = SubResource("Box_Floor")
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor" unique_id=14907928]
-material_override = SubResource("Mat_Gray")
-mesh = SubResource("Mesh_Floor")
-
-[node name="Ramp30" type="StaticBody3D" parent="." unique_id=229491270]
-transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, 0, 19.5718, 48.167274)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Ramp30" unique_id=34216318]
-shape = SubResource("Box_Floor")
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Ramp30" unique_id=249921601]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -12, 21)
-mesh = SubResource("Mesh_Floor")
-
-[node name="Stairs" type="Node3D" parent="." unique_id=719765175]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0, 0)
-
-[node name="Step1" type="StaticBody3D" parent="Stairs" unique_id=1097400676]
-transform = Transform3D(0.05, 0, 0, 0, 0.2, 0, 0, 0, 0.05, 0, 0.1, 0)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Stairs/Step1" unique_id=1359077322]
-shape = SubResource("Box_Floor")
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Stairs/Step1" unique_id=1168619700]
-mesh = SubResource("Mesh_Floor")
-
-[node name="Step2" type="StaticBody3D" parent="Stairs" unique_id=1463866457]
-transform = Transform3D(0.05, 0, 0, 0, 0.2, 0, 0, 0, 0.05, 2, 0.3, 0)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Stairs/Step2" unique_id=977775466]
-shape = SubResource("Box_Floor")
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Stairs/Step2" unique_id=1322266740]
-mesh = SubResource("Mesh_Floor")
-
-[node name="Step3" type="StaticBody3D" parent="Stairs" unique_id=165072760]
-transform = Transform3D(0.05, 0, 0, 0, 0.2, 0, 0, 0, 0.05, 4, 0.5, 0)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Stairs/Step3" unique_id=197163358]
-shape = SubResource("Box_Floor")
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Stairs/Step3" unique_id=496458166]
-mesh = SubResource("Mesh_Floor")
 
 [node name="Player" parent="." unique_id=1749752620 instance=ExtResource("1_player")]
 unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
-input_actions = {
-"back": "back",
-"crouch": "crouch",
-"duck": "duck",
-"forward": "forward",
-"jump": "jump",
-"left": "left",
-"right": "right",
-"sprint": "sprint"
-}
 
 [node name="UI" type="CanvasLayer" parent="." unique_id=1717347338]
 
@@ -119,3 +53,19 @@ text = "State: IDLE"
 unique_name_in_owner = true
 layout_mode = 2
 text = "<INPUT INSTRUCTIONS HINT>"
+
+[node name="Floor" type="CSGBox3D" parent="." unique_id=697389564]
+use_collision = true
+size = Vector3(80, 0, 80)
+material = SubResource("Mat_Gray")
+
+[node name="Ramp" type="CSGBox3D" parent="." unique_id=1165726571]
+transform = Transform3D(1, 0, 0, 0, 0.49999997, -0.86602545, 0, 0.86602545, 0.49999997, 0, 17.06218, -37.44744)
+use_collision = true
+size = Vector3(60, 1, 40)
+material = SubResource("Mat_Gray")
+
+[node name="Stairs" type="CSGBox3D" parent="." unique_id=908147910]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0.2, 0)
+use_collision = true
+size = Vector3(5, 0.4, 5)

@@ -74,6 +74,10 @@ func _ready() -> void:
 		config = load("res://addons/SUCC/resources/default_config.tres") as SUCCConfig
 	_validate_input_actions()
 	_apply_collider_size(config.stand_height)
+	# Keep the body snapped to the ground when stepping up/down stairs.
+	floor_snap_length = max(config.step_height, 0.5)
+	floor_max_angle = deg_to_rad(50.0)
+	floor_block_on_wall = false
 	camera_mode = default_camera_mode
 	if camera_rig:
 		camera_rig.apply_mode(camera_mode, config)
@@ -220,14 +224,66 @@ func _jump(delta: float) -> void:
 
 func _move_body() -> void:
 	var prev_vy: float = velocity.y
+	var pre_move_pos: Vector3 = global_position
+	var pre_move_horz_speed: float = Vector2(velocity.x, velocity.z).length()
 	var collided: bool = move_and_slide()
-	if collided and not get_floor_normal():
+	if collided and is_on_wall() and (is_on_floor() or was_on_floor):
+		_try_step_up(pre_move_pos, pre_move_horz_speed)
+	elif collided and not get_floor_normal():
 		var slide_direction: Vector3 = get_last_slide_collision().get_normal()
 		velocity = velocity.slide(slide_direction)
 
 	if is_on_floor() and not was_on_floor:
 		landed.emit(prev_vy)
 	was_on_floor = is_on_floor()
+
+
+# Step-up: after move_and_slide bumps into a wall, try: up → forward → down.
+# If we end up on walkable ground within step_height, commit the stepped-up position.
+func _try_step_up(_pre_move_pos: Vector3, pre_move_horz_speed: float) -> void:
+	# Use the input direction (move_dir) rather than post-collision velocity:
+	# a head-on wall collision zeros velocity.x/z, which would skip the step.
+	var wish: Vector3 = Vector3(move_dir.x, 0.0, move_dir.z)
+	if wish.length() < 0.001:
+		wish = Vector3(velocity.x, 0.0, velocity.z)
+	if wish.length() < 0.001:
+		return
+	# Probe ~1 body-radius forward so we actually clear the stair nose.
+	var horz_step: Vector3 = wish.normalized() * max(config.width * 0.6, 0.15)
+
+	var start_xform: Transform3D = global_transform
+
+	# 1. Probe upward.
+	var up_hit: KinematicCollision3D = move_and_collide(Vector3.UP * config.step_height, true)
+	var up_dist: float = config.step_height if up_hit == null else up_hit.get_travel().y
+	if up_dist <= 0.01:
+		return
+
+	# 2. Probe forward at the raised height.
+	global_transform.origin += Vector3(0.0, up_dist, 0.0)
+	var fwd_hit: KinematicCollision3D = move_and_collide(horz_step, true)
+	var fwd_travel: Vector3 = horz_step if fwd_hit == null else fwd_hit.get_travel()
+	if fwd_travel.length() < 0.01:
+		global_transform = start_xform
+		return
+
+	# 3. Probe downward looking for walkable floor.
+	global_transform.origin += fwd_travel
+	var down_hit: KinematicCollision3D = move_and_collide(Vector3.DOWN * (config.step_height + FLOOR_COL_MARGIN), true)
+	if down_hit == null or down_hit.get_normal().dot(Vector3.UP) < cos(floor_max_angle):
+		global_transform = start_xform
+		return
+
+	global_transform.origin += down_hit.get_travel() + Vector3(0.0, FLOOR_COL_MARGIN, 0.0)
+	# Kill upward velocity so step-up doesn't feel like a bounce.
+	if velocity.y > 0.0:
+		velocity.y = 0.0
+	# move_and_slide zeroed horizontal velocity against the step wall. Restore the
+	# pre-collision speed along the wished direction so momentum carries into next frame.
+	var carry_speed: float = max(Vector2(velocity.x, velocity.z).length(), pre_move_horz_speed)
+	var horz_vel: Vector3 = wish.normalized() * carry_speed
+	velocity.x = horz_vel.x
+	velocity.z = horz_vel.z
 
 
 # ------------------------------------------------------------------ floor detection

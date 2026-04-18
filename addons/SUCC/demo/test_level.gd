@@ -3,16 +3,6 @@ class_name SUCCTestLevel extends Node3D
 # Minimal harness for standalone SUCC testing.
 
 
-const HINT_ACTIONS: Array[Array] = [
-	["forward", "move"],
-	["jump", "jump"],
-	["duck", "duck"],
-	["crouch", "crouch"],
-	["sprint", "sprint"],
-	["toggle_camera", "camera"],
-]
-
-
 @onready var player: SUCC = %Player
 @onready var speed_label: Label = %SpeedLabel
 @onready var state_label: Label = %StateLabel
@@ -32,15 +22,37 @@ func _process(_delta: float) -> void:
 
 func _build_hint() -> String:
 	var parts: PackedStringArray = []
-	for entry: Array in HINT_ACTIONS:
-		var action: String = entry[0]
-		var label: String = entry[1]
+
+	var move_label: String = _movement_label()
+	if not move_label.is_empty():
+		parts.append("%s move" % move_label)
+
+	for entry: Array in [["jump", "jump"], ["duck", "duck"], ["crouch", "crouch"], ["sprint", "sprint"], ["toggle_camera", "camera"]]:
+		var key: String = _first_key_for_action(entry[0])
+		if not key.is_empty():
+			parts.append("%s %s" % [key, entry[1]])
+
+	parts.append("Esc mouse")
+
+	var flags: PackedStringArray = []
+	flags.append("bhop: %s" % ("on" if player.enable_bhop else "off"))
+	flags.append("surf: %s" % ("on" if player.enable_surf else "off"))
+
+	return " | ".join(parts) + "\n" + "  ".join(flags)
+
+
+# If forward/left/back/right bind to W/A/S/D, show "WASD". Otherwise list the individual keys.
+func _movement_label() -> String:
+	var order: Array[String] = ["forward", "left", "back", "right"]
+	var keys: PackedStringArray = []
+	for action: String in order:
 		var key: String = _first_key_for_action(action)
 		if key.is_empty():
-			continue
-		parts.append("%s %s" % [key, label])
-	parts.append("Esc mouse")
-	return " | ".join(parts)
+			return ""
+		keys.append(key)
+	if keys[0] == "W" and keys[1] == "A" and keys[2] == "S" and keys[3] == "D":
+		return "WASD"
+	return "/".join(keys)
 
 
 func _first_key_for_action(action: String) -> String:
