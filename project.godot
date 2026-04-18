@@ -10,10 +10,6 @@ config/description="SurfsUp Character Controller - standalone dev project. The a
 run/main_scene="res://addons/SUCC/demo/test_level.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 
-[editor_plugins]
-
-enabled=PackedStringArray("res://addons/SUCC/plugin.cfg")
-
 [input]
 
 forward={

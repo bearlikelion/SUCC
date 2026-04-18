@@ -2,7 +2,7 @@
 
 ## 1. Install the addon
 
-Copy `addons/SUCC/` into your project and enable the plugin in **Project Settings → Plugins**.
+Copy `addons/SUCC/` into your project's `addons/` folder. SUCC's scripts use `class_name`, so Godot picks them up automatically - no Project Settings step required.
 
 ## 2. Add the required input actions
 

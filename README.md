@@ -24,11 +24,10 @@ This is the character controller from [**SurfsUp**](https://store.steampowered.c
 
 ## Quickstart
 
-1. Copy `addons/SUCC/` into your project's `addons/` folder (or install via the Godot Asset Library).
-2. Enable the plugin in **Project Settings → Plugins**.
-3. Add these input actions to your Input Map: `forward`, `back`, `left`, `right`, `jump`, `duck`, `crouch`, `sprint`. Missing actions produce editor warnings and are disabled at runtime.
-4. Instance or inherit `addons/SUCC/scenes/succ_character.tscn` as your player.
-5. Extend `class_name SUCC` to add your game-specific state (health, ammo, roles, etc.).
+1. Copy `addons/SUCC/` into your project's `addons/` folder (or install via the Godot Asset Library). Scripts register automatically via `class_name` - no Plugins toggle needed.
+2. Add these input actions to your Input Map: `forward`, `back`, `left`, `right`, `jump`, `duck`, `crouch`, `sprint`. Missing actions produce editor warnings and are disabled at runtime.
+3. Instance or inherit `addons/SUCC/scenes/succ_character.tscn` as your player.
+4. Extend `class_name SUCC` to add your game-specific state (health, ammo, roles, etc.).
 
 ```gdscript
 class_name MyPlayer extends SUCC

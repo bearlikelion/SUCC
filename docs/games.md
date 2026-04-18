@@ -6,7 +6,7 @@ Games shipping or in development using the SUCC character controller.
 
 [![SurfsUp on Steam](games/surfsup.jpg){ loading=lazy }](https://store.steampowered.com/app/3454830/SurfsUp/?utm_source=SUCC)
 
-by **[Mark Arneman](https://bearlikelion.com/)** & **[Nerdiful](https://nerdiful.itch.io/)** - the surf/bhop game whose controller SUCC was extracted from. [Wishlist on Steam](https://store.steampowered.com/app/3454830/SurfsUp/?utm_source=SUCC).
+by **[Mark Arneman](https://bearlikelion.com/)** & **[Nerdiful](https://nerdiful.itch.io/)** - the surf/bhop game whose controller SUCC was extracted from. [Play for free on Steam!](https://store.steampowered.com/app/3454830/SurfsUp/?utm_source=SUCC).
 
 ## Add your game
 

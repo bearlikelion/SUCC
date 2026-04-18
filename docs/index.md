@@ -24,6 +24,6 @@ Example games and modes (hunter-vs-prop, surf, bhop, climb) will live in the sep
 
 **Godot Asset Library** (recommended): search for "SUCC" in the Godot editor's AssetLib tab.
 
-**Manual**: download the latest release zip from [GitHub Releases](https://github.com/bearlikelion/SUCC/releases), copy `addons/SUCC/` into your project's `addons/` folder, then enable the plugin in Project Settings → Plugins.
+**Manual**: download the latest release zip from [GitHub Releases](https://github.com/bearlikelion/SUCC/releases) and copy `addons/SUCC/` into your project's `addons/` folder. SUCC's scripts use `class_name`, so Godot registers them automatically - no Plugins toggle needed.
 
 Continue to the [Quickstart](quickstart.md).
