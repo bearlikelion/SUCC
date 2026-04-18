@@ -2,7 +2,7 @@
 
 A multiplayer-focused, inheritable, state-based first/third-person character controller for Godot 4.
 
-Released **CC0** — use it freely in any project, commercial or otherwise.
+Released under the **MIT License** — use it freely in any project, commercial or otherwise.
 
 ## What SUCC is
 
@@ -16,7 +16,7 @@ Released **CC0** — use it freely in any project, commercial or otherwise.
 
 SUCC is **just the controller**. It does not provide health, ammo, scoring, checkpoints, UI, chat, VOIP, leaderboards, or game modes. Those live in *your* game code extending `SUCC`.
 
-Example games/modes (hunter-vs-prop, surf, bhop, climb) are in the separate **SUCC Demos** repo (CC-BY-4.0).
+Example games/modes (hunter-vs-prop, surf, bhop, climb) are in the separate **SUCC Demos** repo.
 
 ## Install
 

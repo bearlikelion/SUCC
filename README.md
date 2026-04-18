@@ -2,7 +2,7 @@
 
 A multiplayer-focused, inheritable, state-based first/third-person character controller for Godot 4.
 
-Released **CC0** — use it freely in any project, commercial or otherwise.
+Released under the **MIT License** — use it freely in any project, commercial or otherwise.
 
 ## Quickstart
 
@@ -29,4 +29,4 @@ Game-specific systems (health, scoring, checkpoints, UI, chat, VOIP, leaderboard
 
 ## License
 
-SUCC is CC0. The separate `SUCC_Demos` repository showcasing example game modes is CC-BY-4.0.
+SUCC is MIT-licensed. The separate `SUCC_Demos` repository showcasing example game modes is CC-BY-4.0.
