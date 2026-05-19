@@ -10,6 +10,8 @@ Based on the [Quake movement code](https://github.com/id-software/quake) and the
 
 This is the character controller from [**SurfsUp**](https://store.steampowered.com/app/3454830/SurfsUp/?utm_source=SUCC), now open-sourced for anyone to use, learn from, and build on.
 
+**Documentation:** https://bearlikelion.github.io/SUCC/
+
 ---
 
 ## Features
