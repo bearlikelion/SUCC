@@ -104,7 +104,7 @@ func enter_low_gravity() -> void:
 ## Test your changes
 
 Open `addons/SUCC/demo/test_level.tscn`, assign your config to the player, and run it.
-The stairs, ramps, bhop blocks and surf trough are all sized in engine units, so the
+The stairs, ramps, bhop blocks and surf ramp are all sized in engine units, so the
 demo tells you quickly whether a change broke something. The speed readout under the
 crosshair shows both m/s and engine units.
 

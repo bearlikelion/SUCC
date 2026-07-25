@@ -66,8 +66,8 @@ different thing. Spend a minute on each:
   Holding jump is enough; you don't need to tap it.
 - **Crouch corridor** (purple), walk into it standing and you stop. Hold **Ctrl** and
   you fit.
-- **Surf ramps** (blue), the steep V. Walk up the yellow ramp, drop in, and hold a
-  strafe key into the slope.
+- **Surf ramp** (blue), the steep peak. Walk up the yellow ramp to the top, drop onto
+  one of the sloped faces, and hold a strafe key into the slope.
 - **Slide** (far right), a 40° chute you slide down.
 
 The number under the crosshair is your speed, shown twice: engine units per second on

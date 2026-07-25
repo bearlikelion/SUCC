@@ -208,15 +208,15 @@ size = Vector3(8, 0.6, 30)
 material = SubResource("Mat_Surf")
 
 [node name="DropLedge" type="CSGBox3D" parent="Surf" unique_id=150000003]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.8, 17)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 6.8, 16)
 use_collision = true
-size = Vector3(4, 0.5, 4)
+size = Vector3(8, 0.5, 4)
 material = SubResource("Mat_Accent")
 
 [node name="AccessRamp" type="CSGBox3D" parent="Surf" unique_id=150000004]
-transform = Transform3D(1, 0, 0, 0, 0.9063078, -0.4226183, 0, 0.4226183, 0.9063078, 0, 3.4, 26)
+transform = Transform3D(1, 0, 0, 0, 0.819152, -0.5735764, 0, 0.5735764, 0.819152, -8.5, 3.4, 22.8557)
 use_collision = true
-size = Vector3(2.5, 0.4, 17)
+size = Vector3(2.5, 0.4, 11.9)
 material = SubResource("Mat_Accent")
 
 [node name="Slide" type="Node3D" parent="." unique_id=160000000]

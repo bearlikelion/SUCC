@@ -104,19 +104,22 @@ Release Ctrl while still inside and you stay crouched, there's no room to stand,
 retries every frame rather than giving up. Walk out the far end and you stand
 automatically.
 
-## Surf ramps
+## Surf ramp
 
-![The surf trough](../images/gym-surf.png)
+![The surf ramp, a peak with two sloped faces](../images/gym-surf.png)
 
-Two ramps at **55°**, meeting at the bottom to form a V.
+Two faces at **55°** meeting at an apex, forming a peak rather than a valley.
 
 55° is past the 50° standing limit, so the surfaces never count as floor and you stay
 permanently airborne on them, which is exactly what
 [makes surfing work](movement.md#why-surfing-works). Walk up the yellow access ramp on the
-left (a walkable 25°), drop into the trough, and hold a strafe key into the slope.
+left (a walkable 35°) to the platform at the top, drop onto either face, and hold a strafe
+key into the slope.
 
-The two ramps meet rather than leaving a gap. An open V would let you fall straight
-through between them without ever touching a face.
+The peak shape is the one real surf maps use, and it matters. On a peak you ride the
+outer face with open floor beside you, so easing off the strafe key drops you off the
+side. That is the skill the mode is built around. A valley would funnel you into the
+bottom and hold you there, which teaches nothing.
 
 ## Slide
 
