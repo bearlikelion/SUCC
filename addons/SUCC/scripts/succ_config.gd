@@ -95,9 +95,13 @@ const SOURCE_MULT: float = 39.37
 ## Eye height above the character origin while crouched (m).
 @export var crouch_view_offset: float = 0.796
 
-## Duration in seconds to tween the eye between standing and crouched heights.
-## Lower values feel snappier; higher values feel weightier.
-@export var crouch_time: float = 0.12
+## Seconds to ease the eye down when crouching on the ground. Scaled by the
+## distance left to travel, so an interrupted duck does not restart the easing.
+## Air ducks are always instant, matching Source's FinishDuck.
+@export var crouch_time: float = 0.1
+
+## Seconds to ease the eye back up when standing.
+@export var uncrouch_time: float = 0.1
 
 ## Length of the SpringArm3D when the camera is in third-person mode (m).
 @export var third_person_distance: float = 2.0

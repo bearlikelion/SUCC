@@ -70,6 +70,10 @@ var was_on_floor: bool = false
 
 var _action_available: Dictionary[String, bool] = {}
 var _crouch_tween: Tween
+# Source FinishDuck raises the origin for an air duck; tracked so the matching
+# unduck drops it again and a landing can absorb it.
+var _air_crouch_raised: bool = false
+var _air_crouch_raise: float = 0.0
 # Decayed toward 0 in _process so the camera lags behind abrupt body Y snaps.
 var _camera_step_offset: float = 0.0
 var _clearance_shape: BoxShape3D = BoxShape3D.new()
@@ -99,6 +103,8 @@ func apply_config() -> void:
 	if config == null:
 		return
 	crouched = false
+	_air_crouch_raised = false
+	_air_crouch_raise = 0.0
 	if _crouch_tween:
 		_crouch_tween.kill()
 	_apply_collider_size(config.stand_height)
@@ -189,6 +195,7 @@ func _set_velocity(delta: float) -> void:
 		_crouch()
 	elif crouched and not wish_crouch:
 		_uncrouch()
+	_land_air_crouch()
 
 	if floor_type == FloorType.NONE:
 		_air_accelerate(delta, move_dir)
@@ -357,19 +364,61 @@ func _set_floor_type(_delta: float) -> void:
 
 
 func _crouch() -> void:
+	# Source air duck (gamemovement.cpp FinishDuck): instant, and raises the origin
+	# by the full hull difference so the head holds its world height and the feet
+	# tuck up. The raised hull sits inside the standing one, so no clearance test is
+	# needed. Ramps count as air, so boarding a surf ramp ducks the same way.
+	if floor_type != FloorType.FLOOR and not _air_crouch_raised:
+		_air_crouch_raise = config.stand_height - config.crouch_height
+		global_position.y += _air_crouch_raise
+		_air_crouch_raised = true
 	_apply_collider_size(config.crouch_height)
 	if camera_rig:
-		_tween_camera_height(config.crouch_view_offset)
+		if floor_type == FloorType.FLOOR:
+			_set_crouch_view(config.crouch_view_offset, config.crouch_time)
+		else:
+			# The origin raise and the instant view drop cancel out, holding the
+			# camera at its world height; easing here would bob.
+			if _crouch_tween:
+				_crouch_tween.kill()
+			camera_rig.position.y = config.crouch_view_offset
 	crouched = true
 
 
 func _uncrouch() -> void:
-	if not _has_clearance(config.stand_height):
+	# A raised air duck stands by dropping the origin back down as the legs extend,
+	# so the standing hull has to fit below rather than overhead.
+	var origin_drop: float = _air_crouch_raise if _air_crouch_raised else 0.0
+	if not _has_clearance(config.stand_height, -origin_drop):
 		return
+
+	if origin_drop > 0.0:
+		global_position.y -= origin_drop
+		_air_crouch_raised = false
+		_air_crouch_raise = 0.0
 	_apply_collider_size(config.stand_height)
 	if camera_rig:
-		_tween_camera_height(config.standing_view_offset)
+		if origin_drop > 0.0:
+			# Source air unduck: the origin drop and the instant view rise cancel.
+			if _crouch_tween:
+				_crouch_tween.kill()
+			camera_rig.position.y = config.standing_view_offset
+		else:
+			_set_crouch_view(config.standing_view_offset, config.uncrouch_time)
 	crouched = false
+
+
+# Landing absorbs an air duck's origin raise (the feet met the floor), so a later
+# grounded uncrouch must not drop the origin again.
+func _land_air_crouch() -> void:
+	if not crouched or floor_type != FloorType.FLOOR:
+		return
+	if not _air_crouch_raised:
+		return
+	_air_crouch_raised = false
+	_air_crouch_raise = 0.0
+	if camera_rig:
+		_set_crouch_view(config.crouch_view_offset, config.crouch_time)
 
 
 func _apply_collider_size(height: float) -> void:
@@ -383,14 +432,25 @@ func _apply_collider_size(height: float) -> void:
 	collision.position.y = height / 2.0
 
 
-func _tween_camera_height(new_y: float) -> void:
+# Source eases the grounded duck view with SimpleSpline; cubic in-out is the closest
+# Tween equivalent. The duration scales with the distance left to travel so an
+# interrupted duck does not restart the full easing.
+func _set_crouch_view(new_y: float, base_time: float) -> void:
 	if _crouch_tween:
 		_crouch_tween.kill()
+	var span: float = absf(config.standing_view_offset - config.crouch_view_offset)
+	if span <= 0.0 or base_time <= 0.0:
+		camera_rig.position.y = new_y
+		return
+	var remaining: float = absf(camera_rig.position.y - new_y)
 	_crouch_tween = create_tween()
-	_crouch_tween.tween_property(camera_rig, "position:y", new_y, config.crouch_time)
+	_crouch_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	_crouch_tween.tween_property(
+		camera_rig, "position:y", new_y, base_time * (remaining / span)
+	)
 
 
-func _has_clearance(height: float) -> bool:
+func _has_clearance(height: float, y_offset: float = 0.0) -> bool:
 	# Inset on every axis: a box at exactly the hull size grazes the wall the body is
 	# already touching, which would report the ceiling as blocked while standing.
 	var inset: float = FLOOR_COL_MARGIN * 2.0
@@ -398,7 +458,8 @@ func _has_clearance(height: float) -> bool:
 		config.width - inset, height - inset, config.width - inset
 	)
 	_clearance_params.set_shape(_clearance_shape)
-	_clearance_params.transform.origin = global_position + Vector3(0.0, height / 2.0, 0.0)
+	_clearance_params.transform.origin = global_position \
+		+ Vector3(0.0, height / 2.0 + y_offset, 0.0)
 	_clearance_params.exclude = [get_rid()]
 	_clearance_params.collision_mask = collision_mask
 	var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
