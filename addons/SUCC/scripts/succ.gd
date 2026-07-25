@@ -169,10 +169,11 @@ func _process(delta: float) -> void:
 	if camera_rig == null:
 		return
 	if config.smooth_vertical_step and not is_equal_approx(_camera_step_offset, 0.0):
-		var t: float = clamp(config.step_smoothing_speed * delta, 0.0, 1.0)
-		_camera_step_offset = lerp(_camera_step_offset, 0.0, t)
-		if abs(_camera_step_offset) < 0.001:
-			_camera_step_offset = 0.0
+		# Source closes this gap at a constant rate (150 u/s in SmoothViewOnStairs);
+		# a lerp fraction is framerate-dependent and jitters on consecutive lips.
+		_camera_step_offset = move_toward(
+			_camera_step_offset, 0.0, config.step_smoothing_speed * delta
+		)
 		camera_rig.set_step_offset(_camera_step_offset)
 
 
@@ -258,21 +259,46 @@ func _jump(delta: float) -> void:
 
 func _move_body(delta: float) -> void:
 	var prev_vy: float = velocity.y
-	var pre_move_pos: Vector3 = global_position
-	var pre_move_horz_speed: float = Vector2(velocity.x, velocity.z).length()
-	var collided: bool = move_and_slide()
-	# move_and_slide already projected velocity along every contact plane; sliding
-	# again here would strip the along-ramp component and kill surf momentum.
-	# A low stair nose can report as a floor rather than a wall contact, so test the
-	# distance actually travelled instead of relying on is_on_wall().
-	if collided and (is_on_floor() or was_on_floor) \
-	and _was_blocked(pre_move_pos, pre_move_horz_speed, delta):
-		_try_step_up(pre_move_pos, pre_move_horz_speed)
+	var start_pos: Vector3 = global_position
+	var start_vel: Vector3 = velocity
+	var wanted: float = Vector2(start_vel.x, start_vel.z).length() * delta
+	var grounded: bool = is_on_floor() or was_on_floor
+
+	move_and_slide()
+
+	# Source WalkMove only reaches StepMove when the plain move was blocked
+	# (gamemovement.cpp:1986); stepping unconditionally lifts and drops the body
+	# every frame, which stalls flat-ground movement.
+	var moved: Vector3 = global_position - start_pos
+	var blocked: bool = wanted > 0.001 \
+		and Vector2(moved.x, moved.z).length() < wanted * BLOCKED_TRAVEL_FRACTION
+
+	# Source StepMove: keep the plain slide result, then retry the whole move from a
+	# step height up and commit whichever covered more ground. Re-running the move
+	# rather than teleporting is what stops ramps from flinging the body forward.
+	if blocked and grounded and floor_type != FloorType.NONE:
+		var flat_pos: Vector3 = global_position
+		var flat_vel: Vector3 = velocity
+		if _try_step_move(start_pos, start_vel):
+			var flat_dist: float = Vector2(
+				flat_pos.x - start_pos.x, flat_pos.z - start_pos.z
+			).length_squared()
+			var step_dist: float = Vector2(
+				global_position.x - start_pos.x, global_position.z - start_pos.z
+			).length_squared()
+			if flat_dist > step_dist:
+				global_position = flat_pos
+				velocity = flat_vel
+			else:
+				# Vertical velocity comes from the plain move; the step is a position fix.
+				velocity.y = flat_vel.y
+				if config.smooth_vertical_step:
+					_add_camera_step_offset(start_pos.y - global_position.y)
 
 	# Stair descent via floor_snap_length drops Y without a collision, so seed the
 	# camera offset from the drop itself.
 	if config.smooth_vertical_step and was_on_floor and is_on_floor():
-		var y_drop: float = pre_move_pos.y - global_position.y
+		var y_drop: float = start_pos.y - global_position.y
 		if y_drop > 0.05:
 			_add_camera_step_offset(y_drop)
 
@@ -281,71 +307,38 @@ func _move_body(delta: float) -> void:
 	was_on_floor = is_on_floor()
 
 
-# True when the body covered noticeably less horizontal ground than it asked for.
-# Uses the pre-move speed because move_and_slide has already zeroed velocity against
-# the blocking wall; falls back to the input direction so a body already stopped dead
-# against a step still keeps trying to climb it.
-func _was_blocked(pre_move_pos: Vector3, pre_move_horz_speed: float, delta: float) -> bool:
-	var wanted: float = pre_move_horz_speed * delta
-	if wanted < 0.001:
-		return Vector2(move_dir.x, move_dir.z).length() > 0.001
-	var moved: Vector3 = global_position - pre_move_pos
-	return Vector2(moved.x, moved.z).length() < wanted * BLOCKED_TRAVEL_FRACTION
+# Re-runs the move from one step height up, then drops back down onto the tread.
+# Mirrors Quake SV_WalkMove / Source StepMove: the slide move itself produces the
+# velocity, so no momentum is synthesised and ramps cannot fling the body.
+# Returns false when the stepped attempt found no walkable ground.
+func _try_step_move(start_pos: Vector3, start_vel: Vector3) -> bool:
+	global_position = start_pos
+	velocity = start_vel
+
+	var up_hit: KinematicCollision3D = move_and_collide(
+		Vector3.UP * (config.step_height + FLOOR_COL_MARGIN), true
+	)
+	var up_dist: float = config.step_height + FLOOR_COL_MARGIN
+	if up_hit != null:
+		up_dist = up_hit.get_travel().y
+	if up_dist <= FLOOR_COL_MARGIN:
+		return false
+	global_position += Vector3(0.0, up_dist, 0.0)
+
+	# Horizontal only: a downward component here would cancel the step we just took.
+	velocity.y = 0.0
+	move_and_slide()
+
+	var down_hit: KinematicCollision3D = move_and_collide(
+		Vector3.DOWN * (up_dist + FLOOR_COL_MARGIN), true
+	)
+	if down_hit == null or down_hit.get_normal().y < cos(max_floor_angle):
+		return false
+	global_position += down_hit.get_travel()
+	return true
 
 
-# Step-up: after move_and_slide bumps into a wall, try: up → forward → down.
-# If we end up on walkable ground within step_height, commit the stepped-up position.
-func _try_step_up(_pre_move_pos: Vector3, pre_move_horz_speed: float) -> void:
-	# Use the input direction (move_dir) rather than post-collision velocity:
-	# a head-on wall collision zeros velocity.x/z, which would skip the step.
-	var wish: Vector3 = Vector3(move_dir.x, 0.0, move_dir.z)
-	if wish.length() < 0.001:
-		wish = Vector3(velocity.x, 0.0, velocity.z)
-	if wish.length() < 0.001:
-		return
-	# Probe ~1 body-radius forward so we actually clear the stair nose.
-	var horz_step: Vector3 = wish.normalized() * max(config.width * 0.6, 0.15)
-
-	var start_xform: Transform3D = global_transform
-
-	# 1. Probe upward.
-	var up_hit: KinematicCollision3D = move_and_collide(Vector3.UP * config.step_height, true)
-	var up_dist: float = config.step_height if up_hit == null else up_hit.get_travel().y
-	if up_dist <= 0.01:
-		return
-
-	# 2. Probe forward at the raised height.
-	global_transform.origin += Vector3(0.0, up_dist, 0.0)
-	var fwd_hit: KinematicCollision3D = move_and_collide(horz_step, true)
-	var fwd_travel: Vector3 = horz_step if fwd_hit == null else fwd_hit.get_travel()
-	if fwd_travel.length() < 0.01:
-		global_transform = start_xform
-		return
-
-	# 3. Probe downward looking for walkable floor.
-	global_transform.origin += fwd_travel
-	var down_probe: Vector3 = Vector3.DOWN * (config.step_height + FLOOR_COL_MARGIN)
-	var down_hit: KinematicCollision3D = move_and_collide(down_probe, true)
-	if down_hit == null or down_hit.get_normal().dot(Vector3.UP) < cos(max_floor_angle):
-		global_transform = start_xform
-		return
-
-	global_transform.origin += down_hit.get_travel() + Vector3(0.0, FLOOR_COL_MARGIN, 0.0)
-	# Negative of the rise, so the camera lags the body and catches up in _process.
-	if config.smooth_vertical_step:
-		_add_camera_step_offset(start_xform.origin.y - global_position.y)
-	# Kill upward velocity so step-up doesn't feel like a bounce.
-	if velocity.y > 0.0:
-		velocity.y = 0.0
-	# move_and_slide zeroed horizontal velocity against the step wall; restore it so
-	# momentum carries into the next frame.
-	var carry_speed: float = max(Vector2(velocity.x, velocity.z).length(), pre_move_horz_speed)
-	var horz_vel: Vector3 = wish.normalized() * carry_speed
-	velocity.x = horz_vel.x
-	velocity.z = horz_vel.z
-
-
-# Takes the larger single step rather than summing: climbing consecutive risers adds
+# Takes the largest single step rather than summing: climbing consecutive risers adds
 # faster than the offset decays, and accumulated lag reads as the camera sinking.
 func _add_camera_step_offset(amount: float) -> void:
 	var limit: float = config.step_height

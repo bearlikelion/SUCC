@@ -16,7 +16,6 @@ run/main_scene="res://addons/SUCC/demo/test_level.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 
 
-
 [input]
 
 forward={

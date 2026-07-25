@@ -107,10 +107,10 @@ const SOURCE_MULT: float = 39.37
 ## traversal feels smooth instead of teleporty. Disable for a rigid feel.
 @export var smooth_vertical_step: bool = true
 
-## Speed at which the camera catches up to the body's vertical position after
-## a step. Used as a lerp factor per second - higher is snappier, lower is
-## floatier. Only applies when [member smooth_vertical_step] is true.
-@export_range(1.0, 40.0) var step_smoothing_speed: float = 25.0
+## Rate in m/s at which the camera closes the vertical gap after a step.
+## Source uses a constant 150 units/s (3.81 m/s) in SmoothViewOnStairs.
+## Only applies when [member smooth_vertical_step] is true.
+@export_range(0.5, 20.0) var step_smoothing_speed: float = 3.81
 
 
 @export_group("Mouse")
