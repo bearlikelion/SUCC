@@ -1,10 +1,14 @@
-[gd_scene load_steps=14 format=3 uid="uid://tn8f8hwndc2j"]
+[gd_scene format=3 uid="uid://tn8f8hwndc2j"]
 
 [ext_resource type="PackedScene" uid="uid://dyx826m71ip5e" path="res://addons/SUCC/scenes/succ_character.tscn" id="1_player"]
 [ext_resource type="Script" uid="uid://bdssrppl6wfw3" path="res://addons/SUCC/demo/test_level.gd" id="2_level"]
 [ext_resource type="Theme" path="res://addons/SUCC/demo/demo.tres" id="3_theme"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_ahl2s"]
+sky_top_color = Color(0.13, 0.18, 0.28, 1)
+sky_horizon_color = Color(0.29, 0.34, 0.42, 1)
+ground_bottom_color = Color(0.11, 0.12, 0.15, 1)
+ground_horizon_color = Color(0.24, 0.26, 0.31, 1)
 
 [sub_resource type="Sky" id="Sky_2"]
 sky_material = SubResource("ProceduralSkyMaterial_ahl2s")
@@ -13,9 +17,13 @@ sky_material = SubResource("ProceduralSkyMaterial_ahl2s")
 background_mode = 2
 sky = SubResource("Sky_2")
 ambient_light_energy = 0.5
+tonemap_mode = 2
 
 [sub_resource type="StandardMaterial3D" id="Mat_Gray"]
 albedo_color = Color(0.52, 0.52, 0.56, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_Accent"]
+albedo_color = Color(0.74, 0.66, 0.28, 1)
 
 [sub_resource type="StandardMaterial3D" id="Mat_Stairs"]
 albedo_color = Color(0.58, 0.5, 0.4, 1)
@@ -26,14 +34,11 @@ albedo_color = Color(0.38, 0.54, 0.42, 1)
 [sub_resource type="StandardMaterial3D" id="Mat_Bhop"]
 albedo_color = Color(0.62, 0.46, 0.28, 1)
 
-[sub_resource type="StandardMaterial3D" id="Mat_Surf"]
-albedo_color = Color(0.32, 0.42, 0.62, 1)
-
 [sub_resource type="StandardMaterial3D" id="Mat_Crouch"]
 albedo_color = Color(0.5, 0.36, 0.52, 1)
 
-[sub_resource type="StandardMaterial3D" id="Mat_Accent"]
-albedo_color = Color(0.74, 0.66, 0.28, 1)
+[sub_resource type="StandardMaterial3D" id="Mat_Surf"]
+albedo_color = Color(0.32, 0.42, 0.62, 1)
 
 [node name="TestLevel" type="Node3D" unique_id=1347613809]
 script = ExtResource("2_level")
@@ -65,15 +70,15 @@ material = SubResource("Mat_Accent")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22, 0.25, 4)
 
 [node name="Step1" type="CSGBox3D" parent="Stairs" unique_id=120000001]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1016, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1524, 0)
 use_collision = true
-size = Vector3(6, 0.2032, 2.5)
+size = Vector3(6, 0.3048, 2.5)
 material = SubResource("Mat_Stairs")
 
 [node name="Step2" type="CSGBox3D" parent="Stairs" unique_id=120000002]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.254, -2.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3048, -2.5)
 use_collision = true
-size = Vector3(6, 0.508, 2.5)
+size = Vector3(6, 0.6096, 2.5)
 material = SubResource("Mat_Stairs")
 
 [node name="Step3" type="CSGBox3D" parent="Stairs" unique_id=120000003]
@@ -83,27 +88,27 @@ size = Vector3(6, 0.9144, 2.5)
 material = SubResource("Mat_Stairs")
 
 [node name="Step4" type="CSGBox3D" parent="Stairs" unique_id=120000004]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6604, -7.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6096, -7.5)
 use_collision = true
-size = Vector3(6, 1.3208, 2.5)
+size = Vector3(6, 1.2192, 2.5)
 material = SubResource("Mat_Stairs")
 
 [node name="Step5" type="CSGBox3D" parent="Stairs" unique_id=120000005]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8636, -10)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.762, -10)
 use_collision = true
-size = Vector3(6, 1.7272, 2.5)
+size = Vector3(6, 1.524, 2.5)
 material = SubResource("Mat_Stairs")
 
 [node name="Landing" type="CSGBox3D" parent="Stairs" unique_id=120000006]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8636, -14)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.762, -14)
 use_collision = true
-size = Vector3(6, 1.7272, 6)
+size = Vector3(6, 1.524, 6)
 material = SubResource("Mat_Stairs")
 
 [node name="TallStep" type="CSGBox3D" parent="Stairs" unique_id=120000007]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.254, 4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 0.254, -4)
 use_collision = true
-size = Vector3(6, 0.508, 2.5)
+size = Vector3(4, 0.508, 4)
 material = SubResource("Mat_Accent")
 
 [node name="Slants" type="Node3D" parent="." unique_id=130000000]
@@ -191,27 +196,27 @@ material = SubResource("Mat_Crouch")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24, 0.25, -2)
 
 [node name="RampLeft" type="CSGBox3D" parent="Surf" unique_id=150000001]
-transform = Transform3D(0.5736, 0.8192, 0, -0.8192, 0.5736, 0, 0, 0, 1, -3.1207, 3.3575, 0)
+transform = Transform3D(0.5736, 0.8192, 0, -0.8192, 0.5736, 0, 0, 0, 1, -2.2943, 3.2766, 0)
 use_collision = true
-size = Vector3(6, 0.6, 30)
+size = Vector3(8, 0.6, 30)
 material = SubResource("Mat_Surf")
 
 [node name="RampRight" type="CSGBox3D" parent="Surf" unique_id=150000002]
-transform = Transform3D(0.5736, -0.8192, 0, 0.8192, 0.5736, 0, 0, 0, 1, 3.1207, 3.3575, 0)
+transform = Transform3D(0.5736, -0.8192, 0, 0.8192, 0.5736, 0, 0, 0, 1, 2.2943, 3.2766, 0)
 use_collision = true
-size = Vector3(6, 0.6, 30)
+size = Vector3(8, 0.6, 30)
 material = SubResource("Mat_Surf")
 
 [node name="DropLedge" type="CSGBox3D" parent="Surf" unique_id=150000003]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.11, 16)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.95, 17)
 use_collision = true
-size = Vector3(10, 0.5, 5)
+size = Vector3(12, 0.5, 5)
 material = SubResource("Mat_Accent")
 
 [node name="AccessRamp" type="CSGBox3D" parent="Surf" unique_id=150000004]
-transform = Transform3D(1, 0, 0, 0, 0.9063078, -0.4226183, 0, 0.4226183, 0.9063078, 7, 3.2, 8.5)
+transform = Transform3D(1, 0, 0, 0, 0.9063078, -0.4226183, 0, 0.4226183, 0.9063078, 8, 3.6, 9)
 use_collision = true
-size = Vector3(3, 0.4, 16)
+size = Vector3(3, 0.4, 17)
 material = SubResource("Mat_Accent")
 
 [node name="Slide" type="Node3D" parent="." unique_id=160000000]
@@ -238,17 +243,17 @@ material = SubResource("Mat_Accent")
 [node name="UI" type="CanvasLayer" parent="." unique_id=1717347338]
 
 [node name="HUD" type="Control" parent="UI" unique_id=180000015]
-theme = ExtResource("3_theme")
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme = ExtResource("3_theme")
 
 [node name="Crosshair" type="Label" parent="UI/HUD" unique_id=180000001]
-theme_type_variation = &"HUDCrosshair"
-anchors_preset = 8
+layout_mode = 0
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
@@ -259,12 +264,13 @@ offset_right = 16.0
 offset_bottom = 14.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_type_variation = &"HUDCrosshair"
 text = "+"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Speedo" type="VBoxContainer" parent="UI/HUD" unique_id=180000002]
-anchors_preset = 8
+layout_mode = 0
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
@@ -278,15 +284,15 @@ grow_vertical = 2
 
 [node name="UnitsLabel" type="Label" parent="UI/HUD/Speedo" unique_id=180000003]
 unique_name_in_owner = true
-theme_type_variation = &"HUDSpeed"
 layout_mode = 2
+theme_type_variation = &"HUDSpeed"
 text = "0 u/s"
 horizontal_alignment = 1
 
 [node name="MetricLabel" type="Label" parent="UI/HUD/Speedo" unique_id=180000004]
 unique_name_in_owner = true
-theme_type_variation = &"HUDSub"
 layout_mode = 2
+theme_type_variation = &"HUDSub"
 text = "0.00 m/s"
 horizontal_alignment = 1
 
@@ -297,7 +303,7 @@ text = "IDLE"
 horizontal_alignment = 1
 
 [node name="PresetPanel" type="VBoxContainer" parent="UI/HUD" unique_id=180000006]
-anchors_preset = 1
+layout_mode = 0
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -300.0
@@ -308,8 +314,8 @@ grow_horizontal = 0
 
 [node name="PresetLabel" type="Label" parent="UI/HUD/PresetPanel" unique_id=180000007]
 unique_name_in_owner = true
-theme_type_variation = &"HUDTitle"
 layout_mode = 2
+theme_type_variation = &"HUDTitle"
 text = "Preset"
 horizontal_alignment = 2
 
@@ -327,7 +333,7 @@ horizontal_alignment = 2
 
 [node name="Hint" type="Label" parent="UI/HUD" unique_id=633692235]
 unique_name_in_owner = true
-anchors_preset = 12
+layout_mode = 0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0

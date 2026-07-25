@@ -110,7 +110,7 @@ const SOURCE_MULT: float = 39.37
 ## Speed at which the camera catches up to the body's vertical position after
 ## a step. Used as a lerp factor per second - higher is snappier, lower is
 ## floatier. Only applies when [member smooth_vertical_step] is true.
-@export_range(1.0, 40.0) var step_smoothing_speed: float = 15.0
+@export_range(1.0, 40.0) var step_smoothing_speed: float = 25.0
 
 
 @export_group("Mouse")

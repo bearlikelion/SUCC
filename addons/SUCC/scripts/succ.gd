@@ -34,6 +34,8 @@ const DEFAULT_INPUT_ACTIONS: Dictionary[String, String] = {
 	"sprint": "sprint",
 }
 const FLOOR_COL_MARGIN: float = 0.02
+# Fraction of the requested move below which the body counts as blocked.
+const BLOCKED_TRAVEL_FRACTION: float = 0.9
 
 
 @export var config: SUCCConfig
@@ -44,6 +46,13 @@ const FLOOR_COL_MARGIN: float = 0.02
 # Turn off for engine-authentic jumps, which are always straight up.
 @export var enable_surf: bool = true
 @export var default_camera_mode: CameraMode = CameraMode.FIRST_PERSON
+
+## Slope angle at or above which a walkable floor counts as a ramp.
+@export_range(0.0, 89.0, 0.5, "radians_as_degrees") var ramp_angle_threshold: float = \
+		deg_to_rad(45.0)
+## Steepest slope the body can stand on at all. Steeper surfaces leave it airborne.
+@export_range(0.0, 89.0, 0.5, "radians_as_degrees") var max_floor_angle: float = \
+		deg_to_rad(50.0)
 
 
 var movement_state: MovementState = MovementState.IDLE
@@ -78,7 +87,7 @@ func _ready() -> void:
 	if config == null:
 		config = load("res://addons/SUCC/resources/default_config.tres") as SUCCConfig
 	_validate_input_actions()
-	floor_max_angle = deg_to_rad(50.0)
+	floor_max_angle = max_floor_angle
 	floor_block_on_wall = false
 	camera_mode = default_camera_mode
 	apply_config()
@@ -95,7 +104,9 @@ func apply_config() -> void:
 	_apply_collider_size(config.stand_height)
 	# Snap far enough to hold the floor when descending a full step.
 	floor_snap_length = config.step_height + FLOOR_COL_MARGIN
+	_camera_step_offset = 0.0
 	if camera_rig:
+		camera_rig.set_step_offset(0.0)
 		camera_rig.position.y = config.standing_view_offset
 		camera_rig.apply_mode(camera_mode, config)
 
@@ -150,7 +161,7 @@ func _physics_process(delta: float) -> void:
 	_set_floor_type(delta)
 	_apply_gravity(delta)
 	_set_velocity(delta)
-	_move_body()
+	_move_body(delta)
 	_update_movement_state()
 
 
@@ -171,6 +182,8 @@ func _apply_gravity(delta: float) -> void:
 
 
 func _set_velocity(delta: float) -> void:
+	# Retried every tick: releasing crouch under a ceiling must not leave the body
+	# stuck crouched once the ceiling clears.
 	if wish_crouch and not crouched:
 		_crouch()
 	elif crouched and not wish_crouch:
@@ -243,16 +256,18 @@ func _jump(delta: float) -> void:
 	jumped.emit()
 
 
-func _move_body() -> void:
+func _move_body(delta: float) -> void:
 	var prev_vy: float = velocity.y
 	var pre_move_pos: Vector3 = global_position
 	var pre_move_horz_speed: float = Vector2(velocity.x, velocity.z).length()
 	var collided: bool = move_and_slide()
-	if collided and is_on_wall() and (is_on_floor() or was_on_floor):
+	# move_and_slide already projected velocity along every contact plane; sliding
+	# again here would strip the along-ramp component and kill surf momentum.
+	# A low stair nose can report as a floor rather than a wall contact, so test the
+	# distance actually travelled instead of relying on is_on_wall().
+	if collided and (is_on_floor() or was_on_floor) \
+	and _was_blocked(pre_move_pos, pre_move_horz_speed, delta):
 		_try_step_up(pre_move_pos, pre_move_horz_speed)
-	elif collided and not get_floor_normal():
-		var slide_direction: Vector3 = get_last_slide_collision().get_normal()
-		velocity = velocity.slide(slide_direction)
 
 	# Stair descent via floor_snap_length drops Y without a collision, so seed the
 	# camera offset from the drop itself.
@@ -264,6 +279,18 @@ func _move_body() -> void:
 	if is_on_floor() and not was_on_floor:
 		landed.emit(prev_vy)
 	was_on_floor = is_on_floor()
+
+
+# True when the body covered noticeably less horizontal ground than it asked for.
+# Uses the pre-move speed because move_and_slide has already zeroed velocity against
+# the blocking wall; falls back to the input direction so a body already stopped dead
+# against a step still keeps trying to climb it.
+func _was_blocked(pre_move_pos: Vector3, pre_move_horz_speed: float, delta: float) -> bool:
+	var wanted: float = pre_move_horz_speed * delta
+	if wanted < 0.001:
+		return Vector2(move_dir.x, move_dir.z).length() > 0.001
+	var moved: Vector3 = global_position - pre_move_pos
+	return Vector2(moved.x, moved.z).length() < wanted * BLOCKED_TRAVEL_FRACTION
 
 
 # Step-up: after move_and_slide bumps into a wall, try: up → forward → down.
@@ -299,12 +326,12 @@ func _try_step_up(_pre_move_pos: Vector3, pre_move_horz_speed: float) -> void:
 	global_transform.origin += fwd_travel
 	var down_probe: Vector3 = Vector3.DOWN * (config.step_height + FLOOR_COL_MARGIN)
 	var down_hit: KinematicCollision3D = move_and_collide(down_probe, true)
-	if down_hit == null or down_hit.get_normal().dot(Vector3.UP) < cos(floor_max_angle):
+	if down_hit == null or down_hit.get_normal().dot(Vector3.UP) < cos(max_floor_angle):
 		global_transform = start_xform
 		return
 
 	global_transform.origin += down_hit.get_travel() + Vector3(0.0, FLOOR_COL_MARGIN, 0.0)
-	# Inverse of the body's Y change, so the camera stays put and catches up in _process.
+	# Negative of the rise, so the camera lags the body and catches up in _process.
 	if config.smooth_vertical_step:
 		_add_camera_step_offset(start_xform.origin.y - global_position.y)
 	# Kill upward velocity so step-up doesn't feel like a bounce.
@@ -318,17 +345,22 @@ func _try_step_up(_pre_move_pos: Vector3, pre_move_horz_speed: float) -> void:
 	velocity.z = horz_vel.z
 
 
+# Takes the larger single step rather than summing: climbing consecutive risers adds
+# faster than the offset decays, and accumulated lag reads as the camera sinking.
 func _add_camera_step_offset(amount: float) -> void:
-	var limit: float = config.step_height * 1.1
-	_camera_step_offset = clamp(_camera_step_offset + amount, -limit, limit)
+	var limit: float = config.step_height
+	if absf(amount) > absf(_camera_step_offset):
+		_camera_step_offset = clamp(amount, -limit, limit)
 
 
 func _set_floor_type(_delta: float) -> void:
-	if is_on_floor():
-		var angle: float = get_floor_angle()
-		floor_type = FloorType.RAMP if angle >= PI / 4.0 else FloorType.FLOOR
-	else:
+	if not is_on_floor():
 		floor_type = FloorType.NONE
+		return
+	# Anything the body can stand on but not hold is a ramp; keyed off
+	# ramp_angle_threshold so it can never disagree with floor_max_angle.
+	var angle: float = get_floor_angle()
+	floor_type = FloorType.RAMP if angle >= ramp_angle_threshold else FloorType.FLOOR
 
 
 func _crouch() -> void:
@@ -366,10 +398,16 @@ func _tween_camera_height(new_y: float) -> void:
 
 
 func _has_clearance(height: float) -> bool:
-	_clearance_shape.size = Vector3(config.width, height - FLOOR_COL_MARGIN, config.width)
+	# Inset on every axis: a box at exactly the hull size grazes the wall the body is
+	# already touching, which would report the ceiling as blocked while standing.
+	var inset: float = FLOOR_COL_MARGIN * 2.0
+	_clearance_shape.size = Vector3(
+		config.width - inset, height - inset, config.width - inset
+	)
 	_clearance_params.set_shape(_clearance_shape)
 	_clearance_params.transform.origin = global_position + Vector3(0.0, height / 2.0, 0.0)
 	_clearance_params.exclude = [get_rid()]
+	_clearance_params.collision_mask = collision_mask
 	var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	return space.collide_shape(_clearance_params, 1).is_empty()
 
