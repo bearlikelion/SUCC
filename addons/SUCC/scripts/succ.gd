@@ -1,5 +1,6 @@
 @tool
-class_name SUCC extends CharacterBody3D
+class_name SUCC
+extends CharacterBody3D
 
 # SurfsUp Character Controller.
 # Multiplayer-focused, inheritable, state-based first/third-person controller.
@@ -10,11 +11,11 @@ class_name SUCC extends CharacterBody3D
 # Missing actions produce editor configuration warnings and are disabled at runtime.
 
 
-signal movement_state_changed(old_state: int, new_state: int)
-signal game_state_changed(old_state: int, new_state: int)
+signal movement_state_changed(old_state: MovementState, new_state: MovementState)
+signal game_state_changed(old_state: GameState, new_state: GameState)
 signal jumped
 signal landed(fall_velocity: float)
-signal camera_mode_changed(mode: int)
+signal camera_mode_changed(mode: CameraMode)
 
 
 enum CameraMode { FIRST_PERSON, THIRD_PERSON }
@@ -23,7 +24,7 @@ enum MovementState { IDLE, WALKING, SPRINTING, CROUCHING, DUCKING, JUMPING, FALL
 enum GameState { ACTIVE, FROZEN, DISABLED }
 
 
-const DEFAULT_INPUT_ACTIONS: Dictionary = {
+const DEFAULT_INPUT_ACTIONS: Dictionary[String, String] = {
 	"forward": "forward",
 	"back": "back",
 	"left": "left",
@@ -38,21 +39,18 @@ const FLOOR_COL_MARGIN: float = 0.02
 
 @export var config: SUCCConfig
 # Maps logical action names to project InputMap action names.
-# Override in the inspector to use different bindings (e.g. "jump" -> "ui_accept").
-@export var input_actions: Dictionary = DEFAULT_INPUT_ACTIONS.duplicate()
+@export var input_actions: Dictionary[String, String] = DEFAULT_INPUT_ACTIONS.duplicate()
 @export var enable_bhop: bool = true
+# Adds the jump impulse along the floor normal for surf ramp boosts.
+# Turn off for engine-authentic jumps, which are always straight up.
 @export var enable_surf: bool = true
 @export var default_camera_mode: CameraMode = CameraMode.FIRST_PERSON
 
 
-@onready var collision: CollisionShape3D = $Collision
-@onready var camera_rig: SUCCCamera = $CameraRig
-
-
-var movement_state: int = MovementState.IDLE
-var game_state: int = GameState.ACTIVE
-var camera_mode: int = CameraMode.FIRST_PERSON
-var floor_type: int = FloorType.NONE
+var movement_state: MovementState = MovementState.IDLE
+var game_state: GameState = GameState.ACTIVE
+var camera_mode: CameraMode = CameraMode.FIRST_PERSON
+var floor_type: FloorType = FloorType.NONE
 
 var move_input: Vector2 = Vector2.ZERO
 var move_dir: Vector3 = Vector3.ZERO
@@ -61,14 +59,17 @@ var wish_jump: bool = false
 var wish_crouch: bool = false
 var crouched: bool = false
 var was_on_floor: bool = false
-var _action_available: Dictionary = {}
+
+var _action_available: Dictionary[String, bool] = {}
 var _crouch_tween: Tween
-# Vertical offset applied to camera_rig to smooth out step-up/down snaps.
-# Set when the body's Y changes abruptly; decayed toward 0 each frame in _process.
+# Decayed toward 0 in _process so the camera lags behind abrupt body Y snaps.
 var _camera_step_offset: float = 0.0
+var _clearance_shape: BoxShape3D = BoxShape3D.new()
+var _clearance_params: PhysicsShapeQueryParameters3D = PhysicsShapeQueryParameters3D.new()
 
+@onready var collision: CollisionShape3D = $Collision
+@onready var camera_rig: SUCCCamera = $CameraRig
 
-# ------------------------------------------------------------------ lifecycle
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
@@ -92,7 +93,11 @@ func _get_configuration_warnings() -> PackedStringArray:
 	for logical: String in DEFAULT_INPUT_ACTIONS.keys():
 		var action: String = input_actions.get(logical, DEFAULT_INPUT_ACTIONS[logical])
 		if not _action_exists_in_project(action):
-			warnings.append("Input action '%s' (logical '%s') is not in the project's InputMap. This movement will be disabled at runtime." % [action, logical])
+			warnings.append(
+				"Input action '%s' (logical '%s') is not in the project's InputMap. "
+				% [action, logical]
+				+ "This movement will be disabled at runtime."
+			)
 	if not has_node("Collision"):
 		warnings.append("Missing child CollisionShape3D named 'Collision'.")
 	if not has_node("CameraRig"):
@@ -100,15 +105,16 @@ func _get_configuration_warnings() -> PackedStringArray:
 	return warnings
 
 
-# ------------------------------------------------------------------ input
-
 func _unhandled_input(event: InputEvent) -> void:
 	if Engine.is_editor_hint() or not is_multiplayer_authority():
 		return
 	if _can_look() and camera_rig:
 		camera_rig.handle_input(event, config)
 	if event.is_action_pressed("ui_cancel"):
-		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED else Input.MOUSE_MODE_CAPTURED
+		if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		else:
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
 func _gather_movement_input() -> void:
@@ -118,16 +124,24 @@ func _gather_movement_input() -> void:
 	var right: float = _action_strength("right")
 	move_input = Vector2(right - left, back - fwd).normalized()
 
-	move_dir = Vector3(move_input.x, 0.0, move_input.y)
-	move_dir = move_dir.normalized() * config.max_speed
-	move_dir = move_dir.rotated(Vector3.UP, global_rotation.y)
-
 	wish_sprint = _action_pressed("sprint")
-	wish_jump = _action_pressed("jump") if enable_bhop else _action_just_pressed("jump")
+	var buffered: bool = enable_bhop and config.bhop_buffered_jump
+	wish_jump = _action_pressed("jump") if buffered else _action_just_pressed("jump")
 	wish_crouch = _action_pressed("duck") or _action_pressed("crouch")
 
+	move_dir = Vector3(move_input.x, 0.0, move_input.y)
+	move_dir = move_dir.normalized() * _wish_speed()
+	move_dir = move_dir.rotated(Vector3.UP, global_rotation.y)
 
-# ------------------------------------------------------------------ physics
+
+# Crouch and sprint scale the speed cap itself, not the acceleration rate.
+func _wish_speed() -> float:
+	if crouched:
+		return config.max_speed * config.crouch_speed_modifier
+	if wish_sprint and _action_available.get("sprint", false):
+		return config.max_speed * config.sprint_speed_modifier
+	return config.max_speed
+
 
 func _physics_process(delta: float) -> void:
 	if Engine.is_editor_hint() or not is_multiplayer_authority():
@@ -148,8 +162,6 @@ func _physics_process(delta: float) -> void:
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint() or camera_rig == null:
 		return
-	# Decay the camera step offset toward zero so the camera smoothly catches up
-	# to the body after a step-up or step-down.
 	if config.smooth_vertical_step and not is_equal_approx(_camera_step_offset, 0.0):
 		var t: float = clamp(config.step_smoothing_speed * delta, 0.0, 1.0)
 		_camera_step_offset = lerp(_camera_step_offset, 0.0, t)
@@ -182,12 +194,13 @@ func _set_velocity(delta: float) -> void:
 
 
 func _friction(delta: float, strength: float) -> void:
-	var temp_speed: float = velocity.length()
+	# Horizontal speed only; a 3D length would inflate drop while falling.
+	var temp_speed: float = Vector3(velocity.x, 0.0, velocity.z).length()
+	if temp_speed <= 0.0:
+		return
 	var control: float = config.stop_speed if temp_speed < config.stop_speed else temp_speed
 	var drop: float = control * config.friction * strength * delta
-	var new_speed: float = max(temp_speed - drop, 0.0)
-	if temp_speed > 0.0:
-		new_speed /= temp_speed
+	var new_speed: float = max(temp_speed - drop, 0.0) / temp_speed
 	velocity.x *= new_speed
 	velocity.z *= new_speed
 
@@ -207,10 +220,6 @@ func _accelerate(delta: float, wish_dir: Vector3) -> void:
 	var accel_speed: float = config.acceleration * wish_speed * delta
 	if accel_speed > add_speed:
 		accel_speed = add_speed
-	if crouched:
-		accel_speed *= config.crouch_speed_modifier
-	elif wish_sprint and _action_available.get("sprint", false):
-		accel_speed *= config.sprint_speed_modifier
 	velocity += accel_speed * wish_dir
 
 
@@ -233,7 +242,8 @@ func _jump(delta: float) -> void:
 	var floor_normal: Vector3 = get_floor_normal() if enable_surf else Vector3.UP
 	if floor_normal == Vector3.ZERO:
 		floor_normal = Vector3.UP
-	velocity += floor_normal * sqrt(2.0 * config.gravity * config.jump_height) * config.surf_jump_retention
+	var impulse: float = sqrt(2.0 * config.gravity * config.jump_height)
+	velocity += floor_normal * impulse * config.surf_jump_retention
 	velocity.y -= config.gravity * delta * 0.5
 	jumped.emit()
 
@@ -249,13 +259,12 @@ func _move_body() -> void:
 		var slide_direction: Vector3 = get_last_slide_collision().get_normal()
 		velocity = velocity.slide(slide_direction)
 
-	# Smooth floor-snap step-downs: if we were on the floor and stayed on the floor
-	# but our Y dropped sharply (stair descent via floor_snap_length), seed the camera.
+	# Stair descent via floor_snap_length drops Y without a collision, so seed the
+	# camera offset from the drop itself.
 	if config.smooth_vertical_step and was_on_floor and is_on_floor():
 		var y_drop: float = pre_move_pos.y - global_position.y
 		if y_drop > 0.05:
-			_camera_step_offset += y_drop
-			_camera_step_offset = clamp(_camera_step_offset, -config.step_height * 1.1, config.step_height * 1.1)
+			_add_camera_step_offset(y_drop)
 
 	if is_on_floor() and not was_on_floor:
 		landed.emit(prev_vy)
@@ -293,29 +302,31 @@ func _try_step_up(_pre_move_pos: Vector3, pre_move_horz_speed: float) -> void:
 
 	# 3. Probe downward looking for walkable floor.
 	global_transform.origin += fwd_travel
-	var down_hit: KinematicCollision3D = move_and_collide(Vector3.DOWN * (config.step_height + FLOOR_COL_MARGIN), true)
+	var down_probe: Vector3 = Vector3.DOWN * (config.step_height + FLOOR_COL_MARGIN)
+	var down_hit: KinematicCollision3D = move_and_collide(down_probe, true)
 	if down_hit == null or down_hit.get_normal().dot(Vector3.UP) < cos(floor_max_angle):
 		global_transform = start_xform
 		return
 
 	global_transform.origin += down_hit.get_travel() + Vector3(0.0, FLOOR_COL_MARGIN, 0.0)
-	# Seed the camera offset with the inverse of the body's Y change so the camera
-	# visually stays put for a moment and smoothly catches up (see _process).
+	# Inverse of the body's Y change, so the camera stays put and catches up in _process.
 	if config.smooth_vertical_step:
-		_camera_step_offset += start_xform.origin.y - global_position.y
-		_camera_step_offset = clamp(_camera_step_offset, -config.step_height * 1.1, config.step_height * 1.1)
+		_add_camera_step_offset(start_xform.origin.y - global_position.y)
 	# Kill upward velocity so step-up doesn't feel like a bounce.
 	if velocity.y > 0.0:
 		velocity.y = 0.0
-	# move_and_slide zeroed horizontal velocity against the step wall. Restore the
-	# pre-collision speed along the wished direction so momentum carries into next frame.
+	# move_and_slide zeroed horizontal velocity against the step wall; restore it so
+	# momentum carries into the next frame.
 	var carry_speed: float = max(Vector2(velocity.x, velocity.z).length(), pre_move_horz_speed)
 	var horz_vel: Vector3 = wish.normalized() * carry_speed
 	velocity.x = horz_vel.x
 	velocity.z = horz_vel.z
 
 
-# ------------------------------------------------------------------ floor detection
+func _add_camera_step_offset(amount: float) -> void:
+	var limit: float = config.step_height * 1.1
+	_camera_step_offset = clamp(_camera_step_offset + amount, -limit, limit)
+
 
 func _set_floor_type(_delta: float) -> void:
 	if is_on_floor():
@@ -324,8 +335,6 @@ func _set_floor_type(_delta: float) -> void:
 	else:
 		floor_type = FloorType.NONE
 
-
-# ------------------------------------------------------------------ crouch
 
 func _crouch() -> void:
 	_apply_collider_size(config.crouch_height)
@@ -362,56 +371,51 @@ func _tween_camera_height(new_y: float) -> void:
 
 
 func _has_clearance(height: float) -> bool:
-	var shape: BoxShape3D = BoxShape3D.new()
-	shape.size = Vector3(config.width, height - FLOOR_COL_MARGIN, config.width)
-	var params: PhysicsShapeQueryParameters3D = PhysicsShapeQueryParameters3D.new()
-	params.set_shape(shape)
-	params.transform.origin = global_position + Vector3(0.0, height / 2.0, 0.0)
-	params.exclude = [get_rid()]
+	_clearance_shape.size = Vector3(config.width, height - FLOOR_COL_MARGIN, config.width)
+	_clearance_params.set_shape(_clearance_shape)
+	_clearance_params.transform.origin = global_position + Vector3(0.0, height / 2.0, 0.0)
+	_clearance_params.exclude = [get_rid()]
 	var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
-	return space.collide_shape(params, 1).is_empty()
+	return space.collide_shape(_clearance_params, 1).is_empty()
 
-
-# ------------------------------------------------------------------ state
 
 func _update_movement_state() -> void:
-	var new_state: int = MovementState.IDLE
+	var new_state: MovementState = MovementState.IDLE
+	var sprinting: bool = wish_sprint and _action_available.get("sprint", false)
 	if floor_type == FloorType.NONE:
 		new_state = MovementState.JUMPING if velocity.y > 0.0 else MovementState.FALLING
 	elif crouched:
 		new_state = MovementState.CROUCHING
 	elif velocity.length() > 0.1:
-		new_state = MovementState.SPRINTING if (wish_sprint and _action_available.get("sprint", false)) else MovementState.WALKING
+		new_state = MovementState.SPRINTING if sprinting else MovementState.WALKING
 	_set_movement_state(new_state)
 
 
-func _set_movement_state(new_state: int) -> void:
+func _set_movement_state(new_state: MovementState) -> void:
 	if new_state == movement_state:
 		return
-	var old_state: int = movement_state
+	var old_state: MovementState = movement_state
 	movement_state = new_state
 	movement_state_changed.emit(old_state, new_state)
 	_on_movement_state_changed(old_state, new_state)
 
 
-func set_game_state(new_state: int) -> void:
+func set_game_state(new_state: GameState) -> void:
 	if new_state == game_state:
 		return
-	var old_state: int = game_state
+	var old_state: GameState = game_state
 	game_state = new_state
 	game_state_changed.emit(old_state, new_state)
 	_on_game_state_changed(old_state, new_state)
 
 
-# ------------------------------------------------------------------ overridable hooks
-
 # Override to run logic on movement state transitions (e.g. play anim).
-func _on_movement_state_changed(_old: int, _new: int) -> void:
+func _on_movement_state_changed(_old: MovementState, _new: MovementState) -> void:
 	pass
 
 
 # Override to run logic on game state transitions.
-func _on_game_state_changed(_old: int, _new: int) -> void:
+func _on_game_state_changed(_old: GameState, _new: GameState) -> void:
 	pass
 
 
@@ -425,14 +429,14 @@ func _can_look() -> bool:
 	return game_state != GameState.DISABLED
 
 
-# ------------------------------------------------------------------ camera
-
 func toggle_camera_mode() -> void:
-	var new_mode: int = CameraMode.THIRD_PERSON if camera_mode == CameraMode.FIRST_PERSON else CameraMode.FIRST_PERSON
-	set_camera_mode(new_mode)
+	if camera_mode == CameraMode.FIRST_PERSON:
+		set_camera_mode(CameraMode.THIRD_PERSON)
+	else:
+		set_camera_mode(CameraMode.FIRST_PERSON)
 
 
-func set_camera_mode(mode: int) -> void:
+func set_camera_mode(mode: CameraMode) -> void:
 	if mode == camera_mode:
 		return
 	camera_mode = mode
@@ -441,15 +445,14 @@ func set_camera_mode(mode: int) -> void:
 	camera_mode_changed.emit(camera_mode)
 
 
-# ------------------------------------------------------------------ input helpers
-
 func _validate_input_actions() -> void:
 	for logical: String in DEFAULT_INPUT_ACTIONS.keys():
 		var action: String = input_actions.get(logical, DEFAULT_INPUT_ACTIONS[logical])
 		var ok: bool = InputMap.has_action(action)
 		_action_available[logical] = ok
 		if not ok:
-			push_warning("SUCC: input action '%s' (logical '%s') not defined; disabling." % [action, logical])
+			push_warning("SUCC: input action '%s' (logical '%s') not defined; disabling."
+				% [action, logical])
 
 
 # @tool-safe InputMap check. InputMap in the editor doesn't always reflect

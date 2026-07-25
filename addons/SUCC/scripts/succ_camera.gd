@@ -1,5 +1,6 @@
 @tool
-class_name SUCCCamera extends SpringArm3D
+class_name SUCCCamera
+extends SpringArm3D
 
 # Camera rig for SUCC. Wraps a SpringArm3D + Camera3D.
 # First-person = spring_length 0, player model hidden.
@@ -7,19 +8,18 @@ class_name SUCCCamera extends SpringArm3D
 # Mouse look rotates the owner SUCC around Y (yaw) and this node around X (pitch).
 
 
+signal mode_changed(mode: SUCC.CameraMode)
+
+
 const PITCH_LIMIT_DEG: float = 89.0
 
 
 @export var invert_mouse_y: bool = false
-# Emits when the camera switches modes; consumers can toggle player model visibility.
-signal mode_changed(mode: int)
 
 
 var _accumulated: Vector2 = Vector2.ZERO
 
-
-# Optional Camera3D child of this SpringArm3D. When present, SUCC applies a
-# transient vertical offset to it to smooth out step-up/down snaps.
+# SUCC applies a transient vertical offset here to smooth step-up/down snaps.
 @onready var camera: Camera3D = _find_camera()
 
 
@@ -65,7 +65,7 @@ func _apply_rotation() -> void:
 	_accumulated = Vector2.ZERO
 
 
-func apply_mode(mode: int, config: SUCCConfig) -> void:
+func apply_mode(mode: SUCC.CameraMode, config: SUCCConfig) -> void:
 	match mode:
 		SUCC.CameraMode.FIRST_PERSON:
 			spring_length = 0.0

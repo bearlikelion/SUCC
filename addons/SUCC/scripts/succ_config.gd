@@ -1,9 +1,12 @@
 @tool
-class_name SUCCConfig extends Resource
+class_name SUCCConfig
+extends Resource
 
 # Physics and feel tuning for a SUCC character.
-# Games swap this resource to create light/medium/heavy characters, low-gravity modes, etc.
-# Defaults are Source-engine-inspired (metres where Source uses inches; 39.37 in/m).
+# Defaults are Source-engine-inspired; see source_units() for the unit conversion.
+
+
+const SOURCE_MULT: float = 39.37
 
 
 @export_group("Gravity & Jump")
@@ -35,8 +38,9 @@ class_name SUCCConfig extends Resource
 ## no input is given. Source default is 4.0 for sv_friction.
 @export var friction: float = 4.0
 
-## Minimum speed at which friction applies its full stop contribution.
-## Below this threshold friction clamps to stop_speed to prevent micro-sliding.
+## Floor on the value friction is computed from, so slow movement still decelerates
+## at a fixed rate instead of tapering off asymptotically. Source default is 100
+## units (2.54 m) for sv_stopspeed.
 @export var stop_speed: float = 4.0
 
 ## Maximum ground speed in m/s before walking. Sprinting multiplies this
@@ -120,3 +124,13 @@ class_name SUCCConfig extends Resource
 ## 0.022 is the Source default and makes sensitivity values portable from
 ## CS:GO / TF2 / Half-Life muscle memory.
 @export var degrees_per_unit: float = 0.022
+
+
+# Convert Source/Hammer units to metres.
+static func source_units(value: float) -> float:
+	return value / SOURCE_MULT
+
+
+# Quake, Quake 2 and GoldSrc share Source's inch-based unit scale.
+static func quake_units(value: float) -> float:
+	return source_units(value)
