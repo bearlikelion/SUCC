@@ -6,7 +6,7 @@ extends CharacterBody3D
 # Extend this class to build your game's player. Physics tuning lives in SUCCConfig.
 #
 # Required input actions (rebindable via input_actions export):
-#   forward, back, left, right, jump, duck, crouch, sprint
+#   forward, back, left, right, jump, crouch, sprint
 # Missing actions are disabled at runtime and reported via push_warning.
 
 
@@ -19,7 +19,7 @@ signal camera_mode_changed(mode: CameraMode)
 
 enum CameraMode { FIRST_PERSON, THIRD_PERSON }
 enum FloorType { NONE, FLOOR, RAMP }
-enum MovementState { IDLE, WALKING, SPRINTING, CROUCHING, DUCKING, JUMPING, FALLING, AIR }
+enum MovementState { IDLE, WALKING, SPRINTING, CROUCHING, JUMPING, FALLING, AIR }
 enum GameState { ACTIVE, FROZEN, DISABLED }
 
 
@@ -29,7 +29,6 @@ const DEFAULT_INPUT_ACTIONS: Dictionary[String, String] = {
 	"left": "left",
 	"right": "right",
 	"jump": "jump",
-	"duck": "duck",
 	"crouch": "crouch",
 	"sprint": "sprint",
 }
@@ -113,7 +112,7 @@ func apply_config() -> void:
 	_camera_step_offset = 0.0
 	if camera_rig:
 		camera_rig.set_step_offset(0.0)
-		camera_rig.position.y = config.standing_view_offset
+		camera_rig.view_height = config.standing_view_offset
 		camera_rig.apply_mode(camera_mode, config)
 
 
@@ -139,7 +138,7 @@ func _gather_movement_input() -> void:
 	wish_sprint = _action_pressed("sprint")
 	var buffered: bool = enable_bhop and config.bhop_buffered_jump
 	wish_jump = _action_pressed("jump") if buffered else _action_just_pressed("jump")
-	wish_crouch = _action_pressed("duck") or _action_pressed("crouch")
+	wish_crouch = _action_pressed("crouch")
 
 	move_dir = Vector3(move_input.x, 0.0, move_input.y)
 	move_dir = move_dir.normalized() * _wish_speed()
@@ -181,6 +180,12 @@ func _process(delta: float) -> void:
 			_camera_step_offset, 0.0, config.step_smoothing_speed * delta
 		)
 		camera_rig.set_step_offset(_camera_step_offset)
+
+	if camera_mode != CameraMode.FIRST_PERSON:
+		return
+	var horizontal_speed: float = Vector2(velocity.x, velocity.z).length()
+	camera_rig.update_bob(delta, horizontal_speed, floor_type != FloorType.NONE, config)
+	camera_rig.update_tilt(delta, velocity, config)
 
 
 func _apply_gravity(delta: float) -> void:
@@ -381,7 +386,7 @@ func _crouch() -> void:
 			# camera at its world height; easing here would bob.
 			if _crouch_tween:
 				_crouch_tween.kill()
-			camera_rig.position.y = config.crouch_view_offset
+			camera_rig.view_height = config.crouch_view_offset
 	crouched = true
 
 
@@ -402,7 +407,7 @@ func _uncrouch() -> void:
 			# Source air unduck: the origin drop and the instant view rise cancel.
 			if _crouch_tween:
 				_crouch_tween.kill()
-			camera_rig.position.y = config.standing_view_offset
+			camera_rig.view_height = config.standing_view_offset
 		else:
 			_set_crouch_view(config.standing_view_offset, config.uncrouch_time)
 	crouched = false
@@ -440,13 +445,13 @@ func _set_crouch_view(new_y: float, base_time: float) -> void:
 		_crouch_tween.kill()
 	var span: float = absf(config.standing_view_offset - config.crouch_view_offset)
 	if span <= 0.0 or base_time <= 0.0:
-		camera_rig.position.y = new_y
+		camera_rig.view_height = new_y
 		return
-	var remaining: float = absf(camera_rig.position.y - new_y)
+	var remaining: float = absf(camera_rig.view_height - new_y)
 	_crouch_tween = create_tween()
 	_crouch_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
 	_crouch_tween.tween_property(
-		camera_rig, "position:y", new_y, base_time * (remaining / span)
+		camera_rig, "view_height", new_y, base_time * (remaining / span)
 	)
 
 

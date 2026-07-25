@@ -26,6 +26,10 @@ how the source engines specify them. The `.tres` files store metres.
 | `crouch_speed_modifier` | 0.333 | 0.333 | 1.0 | 0.333 | 0.333 |
 | `sprint_speed_modifier` | 1.6 | 1.0 | 1.0 | 1.0 | 1.6842 |
 | `crouch_time` | 0.1 s | 0.4 s | 0.0 s | 0.0 s | 0.4 s |
+| `bob_amount` | 0.01 | 0.01 | 0.02 | 0.005 | 0.002 |
+| `bob_cycle` | 0.8 s | 0.8 s | 0.6 s | 0.8 s | 0.8 s |
+| `tilt_angle` | 2.0° | 2.0° | 2.0° | 2.0° | 0° |
+| `tilt_speed` | 200 | 200 | 200 | 200 | 200 |
 
 ## Notes on individual cells
 
@@ -34,7 +38,7 @@ how the source engines specify them. The `.tres` files store metres.
 back-solved so the impulse matches.
 
 **`quake` has no crouch.** Quake 1 has no duck at all, so `crouch_height` equals
-`stand_height`, the view offsets match, and `crouch_speed_modifier` is 1.0. Pressing duck
+`stand_height`, the view offsets match, and `crouch_speed_modifier` is 1.0. Pressing crouch
 does nothing.
 
 **`quake2` air movement.** Vanilla Quake 2 defaults `pm_airaccelerate` to 0, which routes
@@ -44,6 +48,12 @@ reproduces that with `air_acceleration` 1.0 and the air cap raised to full `max_
 
 **`source` speeds.** 190 is HL2's `hl2_normspeed`. `sprint_speed_modifier` of 1.6842 takes
 that to 320, which is `hl2_sprintspeed`. HL2's 150-unit slow walk has no equivalent.
+
+**Head bob and tilt.** `bob_amount` is `cl_bob`, `bob_cycle` is `cl_bobcycle` and
+`tilt_angle` is `cl_rollangle` (or `sv_rollangle` in Quake 2 and Source). Source ships
+`sv_rollangle` at 0, so Half-Life 2 has no strafe tilt; the other three use 2 degrees.
+Quake bobs hardest at 0.02 on the shortest cycle, and Source is nearly imperceptible at
+0.002. Bob and tilt are first-person only.
 
 **`default_config` stop speed.** 157 units is SurfsUp's own tuning, not an engine value;
 the four engine presets all use 100.

@@ -117,6 +117,34 @@ const SOURCE_MULT: float = 39.37
 @export_range(0.5, 20.0) var step_smoothing_speed: float = 3.81
 
 
+@export_group("Head Bob & Tilt")
+
+## Vertical head bob amplitude per unit of horizontal speed, as cl_bob.
+## Quake uses 0.02, Half-Life 0.01, Source 0.002. Set to 0.0 to disable.
+@export_range(0.0, 0.05, 0.001) var bob_amount: float = 0.01
+
+## Seconds for one full bob cycle, as cl_bobcycle. Quake uses 0.6,
+## Half-Life and Source 0.8. Lower values bob faster.
+@export_range(0.1, 2.0, 0.05) var bob_cycle: float = 0.8
+
+## Fraction of the cycle spent moving up, as cl_bobup. 0.5 is symmetric;
+## every engine ships 0.5.
+@export_range(0.1, 0.9, 0.05) var bob_up: float = 0.5
+
+## Ceiling on the bob offset in metres, so sprinting does not swing the view
+## wildly. Quake clamps the raw bob to 4 units up and 7 down.
+@export_range(0.0, 0.5, 0.005) var bob_max: float = 0.102
+
+## Maximum view roll in degrees when strafing, as cl_rollangle / sv_rollangle.
+## Quake, Half-Life and Quake 2 use 2.0; Source ships 0, i.e. no tilt.
+## Set to 0.0 to disable.
+@export_range(0.0, 15.0, 0.1) var tilt_angle: float = 2.0
+
+## Sideways speed in m/s at which the tilt reaches [member tilt_angle], as
+## cl_rollspeed. Every engine uses 200 units (5.08 m/s).
+@export_range(0.5, 20.0, 0.1) var tilt_speed: float = 5.08
+
+
 @export_group("Mouse")
 
 ## Sensitivity multiplier applied to raw mouse motion before conversion.

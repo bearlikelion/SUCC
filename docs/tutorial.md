@@ -19,7 +19,7 @@ them the moment it scans the folder. There is no plugin to enable in Project Set
 ## Step 2: teach your project the movement keys
 
 SUCC reads named actions rather than raw keys, so you decide the bindings. Open
-**Project → Project Settings → Input Map** and add these eight actions:
+**Project → Project Settings → Input Map** and add these seven actions:
 
 | Action name | Key |
 |---|---|
@@ -28,8 +28,7 @@ SUCC reads named actions rather than raw keys, so you decide the bindings. Open
 | `left` | A |
 | `right` | D |
 | `jump` | Space |
-| `duck` | Ctrl |
-| `crouch` | C |
+| `crouch` | Ctrl |
 | `sprint` | Shift |
 
 Type the name exactly as written, press **Add**, then click the **+** beside it to

@@ -107,7 +107,7 @@ func _build_hint() -> String:
 
 	var actions: Dictionary[String, String] = {
 		"jump": "jump",
-		"duck": "duck",
+		"crouch": "crouch",
 		"sprint": "sprint",
 		"toggle_camera": "camera",
 		"toggle_surf": "surf",

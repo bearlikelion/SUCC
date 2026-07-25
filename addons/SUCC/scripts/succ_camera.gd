@@ -17,9 +17,18 @@ const PITCH_LIMIT_DEG: float = 89.0
 
 
 var _accumulated: Vector2 = Vector2.ZERO
+var _step_offset: float = 0.0
+var _bob_offset: float = 0.0
+var _bob_time: float = 0.0
 
-# SUCC applies a transient vertical offset here to smooth step-up/down snaps.
 @onready var camera: Camera3D = _find_camera()
+# Eye height before bob and step offsets. SUCC writes view_height rather than
+# position.y directly, because a SpringArm3D overwrites its child camera's
+# transform every frame; the offsets have to move the arm itself.
+@onready var view_height: float = position.y:
+	set(value):
+		view_height = value
+		_apply_offsets()
 
 
 func _find_camera() -> Camera3D:
@@ -33,8 +42,56 @@ func _find_camera() -> Camera3D:
 
 
 func set_step_offset(offset: float) -> void:
-	if camera:
-		camera.position.y = offset
+	_step_offset = offset
+	_apply_offsets()
+
+
+# Quake V_CalcBob: a sine over a fixed cycle, scaled by horizontal speed, with the
+# upstroke and downstroke able to take different fractions of the cycle.
+func update_bob(delta: float, horizontal_speed: float, grounded: bool,
+		config: SUCCConfig) -> void:
+	if config.bob_amount <= 0.0:
+		if not is_zero_approx(_bob_offset):
+			_bob_offset = 0.0
+			_apply_offsets()
+		return
+
+	# Airborne bob would fight the jump arc, so ease it out instead of freezing it.
+	if not grounded:
+		_bob_offset = move_toward(_bob_offset, 0.0, config.bob_max * 4.0 * delta)
+		_apply_offsets()
+		return
+
+	_bob_time = fmod(_bob_time + delta, config.bob_cycle)
+	var cycle: float = _bob_time / config.bob_cycle
+	if cycle < config.bob_up:
+		cycle = PI * cycle / config.bob_up
+	else:
+		cycle = PI + PI * (cycle - config.bob_up) / (1.0 - config.bob_up)
+
+	var bob: float = horizontal_speed * config.bob_amount
+	bob = bob * 0.3 + bob * 0.7 * sin(cycle)
+	_bob_offset = clampf(bob, -config.bob_max, config.bob_max)
+	_apply_offsets()
+
+
+# Quake V_CalcRoll: tilt proportional to sideways velocity, capped at tilt_angle.
+func update_tilt(delta: float, velocity: Vector3, config: SUCCConfig) -> void:
+	if config.tilt_angle <= 0.0:
+		if not is_zero_approx(rotation.z):
+			rotation.z = move_toward(rotation.z, 0.0, deg_to_rad(60.0) * delta)
+		return
+	var side: float = velocity.dot(global_transform.basis.x)
+	var sign_: float = -1.0 if side < 0.0 else 1.0
+	side = absf(side)
+	var value: float = config.tilt_angle
+	if side < config.tilt_speed:
+		value = side * value / config.tilt_speed
+	rotation.z = deg_to_rad(value * sign_)
+
+
+func _apply_offsets() -> void:
+	position.y = view_height + _step_offset + _bob_offset
 
 
 func handle_input(event: InputEvent, config: SUCCConfig) -> void:

@@ -59,6 +59,22 @@ These two decide whether your game can bhop and surf at all:
 - **`crouch_time`** / **`uncrouch_time`**, seconds to ease the camera down and back up
   while on the ground. Air crouches are always instant, matching Source.
 
+### Head bob and view tilt
+
+These are cosmetic, first-person only, and every engine ships different values.
+
+- **`bob_amount`**, how far the view bobs per unit of speed, the same idea as `cl_bob`.
+  Quake uses 0.02 and is unmistakable; Source uses 0.002 and you can barely tell.
+  Set it to 0 to switch bob off.
+- **`bob_cycle`**, seconds for one full bob. Quake 0.6, everything else 0.8.
+- **`bob_up`**, how much of the cycle is spent moving up. Every engine ships 0.5.
+- **`bob_max`**, a ceiling in metres so sprinting doesn't swing the view wildly.
+- **`tilt_angle`**, how far the view rolls when you strafe, in degrees. Quake,
+  Half-Life and Quake 2 use 2.0. Source ships 0, so Half-Life 2 has no tilt at all.
+  Set it to 0 to switch tilt off.
+- **`tilt_speed`**, the sideways speed at which the tilt maxes out. Every engine uses
+  200 units, which is 5.08 m/s.
+
 ## Working in engine units
 
 The presets were authored in Quake/Source units (1 unit ≈ 1 inch) because that's how the
