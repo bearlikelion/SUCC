@@ -5,7 +5,7 @@ extends Node3D
 # Number keys swap movement presets; the speedometer reads in both m/s and engine units.
 
 
-const SPAWN_POSITION: Vector3 = Vector3(0.0, 1.0, 0.0)
+const SPAWN_POSITION: Vector3 = Vector3(8.0, 1.0, 24.0)
 
 # Label, resource path, and the cvar summary shown in the HUD.
 const PRESETS: Array[Dictionary] = [
