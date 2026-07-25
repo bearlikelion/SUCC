@@ -1,4 +1,5 @@
-class_name SUCCPawn extends CharacterBody3D
+class_name SUCCPawn
+extends CharacterBody3D
 
 # Remote-peer representation of a SUCC character.
 # Non-authority: receives synced transform and state, does not run input or physics.

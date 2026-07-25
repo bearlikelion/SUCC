@@ -2,6 +2,24 @@
 
 All physics and feel tuning. Swap configs at runtime to change character weight, gravity, speed profile, etc. Exports are grouped in the inspector for easier navigation.
 
+Call [`SUCC.apply_config()`](succ.md) after replacing `config` at runtime so the collider, floor snap length and camera height are re-derived.
+
+Four engine-accurate presets ship with the addon - see [Engine Presets](../presets.md).
+
+## Unit helpers
+
+All the engines SUCC draws from use 1 unit = 1 inch. These static methods keep authored values readable:
+
+| Name | Signature | Description |
+|---|---|---|
+| `SOURCE_MULT` | `const float = 39.37` | Units per metre. |
+| `source_units` | `static func (value: float) -> float` | Engine units to metres. |
+| `quake_units` | `static func (value: float) -> float` | Alias for `source_units`; documents intent at the call site. |
+
+```gdscript
+config.max_speed = SUCCConfig.source_units(320.0)   # 8.128 m/s
+```
+
 ## Gravity & Jump
 
 | Name | Type | Default | Description |
@@ -9,7 +27,7 @@ All physics and feel tuning. Swap configs at runtime to change character weight,
 | `gravity` | `float` | `20.32` | m/s² downward. |
 | `jump_height` | `float` | `1.143` | Apex height (m). |
 | `surf_jump_retention` | `float` | `1.0` | Velocity retention when jumping off a ramp. |
-| `bhop_buffered_jump` | `bool` | `true` | Queue jump on landing if held. |
+| `bhop_buffered_jump` | `bool` | `true` | Queue jump on landing if held. Requires `SUCC.enable_bhop`; either flag being false falls back to just-pressed jumps. |
 
 ## Ground Movement
 
@@ -17,7 +35,7 @@ All physics and feel tuning. Swap configs at runtime to change character weight,
 |---|---|---|---|
 | `acceleration` | `float` | `7.5` | Ground accel coefficient. |
 | `friction` | `float` | `4.0` | Ground friction. |
-| `stop_speed` | `float` | `4.0` | Min speed for full friction. |
+| `stop_speed` | `float` | `4.0` | Floor on the value friction is computed from, so slow movement still decelerates at a fixed rate. Source's `sv_stopspeed` is 100u (2.54 m). |
 | `max_speed` | `float` | `10.16` | Max ground speed (m/s). |
 
 ## Air Movement

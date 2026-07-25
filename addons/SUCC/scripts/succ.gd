@@ -78,15 +78,26 @@ func _ready() -> void:
 	if config == null:
 		config = load("res://addons/SUCC/resources/default_config.tres") as SUCCConfig
 	_validate_input_actions()
-	_apply_collider_size(config.stand_height)
-	# Keep the body snapped to the ground when stepping up/down stairs.
-	floor_snap_length = max(config.step_height, 0.5)
 	floor_max_angle = deg_to_rad(50.0)
 	floor_block_on_wall = false
 	camera_mode = default_camera_mode
-	if camera_rig:
-		camera_rig.apply_mode(camera_mode, config)
+	apply_config()
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+
+# Re-derive collider, snap length and camera from config. Call after swapping config.
+func apply_config() -> void:
+	if config == null:
+		return
+	crouched = false
+	if _crouch_tween:
+		_crouch_tween.kill()
+	_apply_collider_size(config.stand_height)
+	# Snap far enough to hold the floor when descending a full step.
+	floor_snap_length = config.step_height + FLOOR_COL_MARGIN
+	if camera_rig:
+		camera_rig.position.y = config.standing_view_offset
+		camera_rig.apply_mode(camera_mode, config)
 
 
 func _unhandled_input(event: InputEvent) -> void:

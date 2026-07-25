@@ -54,6 +54,7 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Quickstart: quickstart.md
+  - Engine Presets: presets.md
   - Extending SUCC: extending.md
   - Networking: networking.md
   - API Reference:

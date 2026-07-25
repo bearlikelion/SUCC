@@ -48,12 +48,20 @@ Switch between first- and third-person.
 ## Overridable hooks
 
 ```gdscript
-func _on_movement_state_changed(old: int, new: int) -> void
-func _on_game_state_changed(old: int, new: int) -> void
+func _on_movement_state_changed(old: MovementState, new: MovementState) -> void
+func _on_game_state_changed(old: GameState, new: GameState) -> void
 func _can_move() -> bool
 func _can_look() -> bool
 ```
 
-## Editor warnings
+## Runtime validation
 
-`_get_configuration_warnings()` reports every missing input action so you see the problem in the editor before hitting play.
+Missing input actions are reported with `push_warning()` and disabled individually; the rest of the controller keeps working. A missing `Collision` or `CameraRig` child reports via `push_error()` in `_ready()`.
+
+## Swapping config at runtime
+
+```gdscript
+func apply_config() -> void
+```
+
+Re-derives collider size, `floor_snap_length` and camera height from the current `config`. Call it after assigning a new `SUCCConfig`; `_ready()` calls it for you on startup. See [Engine Presets](../presets.md).

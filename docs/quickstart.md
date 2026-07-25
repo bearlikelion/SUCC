@@ -19,7 +19,7 @@ SUCC expects these actions in your project's Input Map:
 | `crouch` | C |
 | `sprint` | Shift |
 
-Missing actions produce a configuration warning on the `SUCC` node in the editor and are disabled at runtime (the rest of the controller keeps working). You can remap action names per-node via the `input_actions` dictionary export.
+Missing actions are reported with `push_warning()` and disabled individually at runtime; the rest of the controller keeps working. You can remap action names per-node via the `input_actions` dictionary export.
 
 ## 3. Instance or inherit the base scene
 
