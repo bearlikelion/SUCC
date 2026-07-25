@@ -1,4 +1,5 @@
-class_name SUCCTestLevel extends Node3D
+class_name SUCCTestLevel
+extends Node3D
 
 # Minimal harness for standalone SUCC testing.
 
@@ -27,10 +28,17 @@ func _build_hint() -> String:
 	if not move_label.is_empty():
 		parts.append("%s move" % move_label)
 
-	for entry: Array in [["jump", "jump"], ["duck", "duck"], ["crouch", "crouch"], ["sprint", "sprint"], ["toggle_camera", "camera"]]:
-		var key: String = _first_key_for_action(entry[0])
+	var actions: Dictionary[String, String] = {
+		"jump": "jump",
+		"duck": "duck",
+		"crouch": "crouch",
+		"sprint": "sprint",
+		"toggle_camera": "camera",
+	}
+	for action: String in actions:
+		var key: String = _first_key_for_action(action)
 		if not key.is_empty():
-			parts.append("%s %s" % [key, entry[1]])
+			parts.append("%s %s" % [key, actions[action]])
 
 	parts.append("Esc mouse")
 

@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="SUCCConfig" format=3 uid="uid://dn6rvqe1yc3tb"]
+
+[ext_resource type="Script" uid="uid://caigicac4nqdq" path="res://addons/SUCC/scripts/succ_config.gd" id="1_succ_config"]
+
+[resource]
+script = ExtResource("1_succ_config")
+gravity = 20.320041
+jump_height = 1.15729
+acceleration = 10.0
+friction = 6.0
+stop_speed = 2.540005
+max_speed = 7.620015
+air_acceleration = 1.0
+max_air_speed = 7.620015
+crouch_speed_modifier = 0.333
+sprint_speed_modifier = 1.0
+stand_height = 1.422403
+crouch_height = 0.711201
+width = 0.812802
+step_height = 0.457201
+standing_view_offset = 1.168402
+crouch_view_offset = 0.558801
+crouch_time = 0.0
