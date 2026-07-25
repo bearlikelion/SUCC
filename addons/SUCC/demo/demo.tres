@@ -1,0 +1,27 @@
+[gd_resource type="Theme" format=3]
+
+[resource]
+Label/colors/font_color = Color(1, 1, 1, 1)
+Label/colors/font_outline_color = Color(0.16, 0.16, 0.18, 1)
+Label/constants/outline_size = 5
+Label/font_sizes/font_size = 14
+HUDSpeed/base_type = &"Label"
+HUDSpeed/colors/font_color = Color(1, 1, 1, 1)
+HUDSpeed/colors/font_outline_color = Color(0.16, 0.16, 0.18, 1)
+HUDSpeed/constants/outline_size = 5
+HUDSpeed/font_sizes/font_size = 32
+HUDSub/base_type = &"Label"
+HUDSub/colors/font_color = Color(1, 1, 1, 1)
+HUDSub/colors/font_outline_color = Color(0.16, 0.16, 0.18, 1)
+HUDSub/constants/outline_size = 5
+HUDSub/font_sizes/font_size = 16
+HUDTitle/base_type = &"Label"
+HUDTitle/colors/font_color = Color(1, 1, 1, 1)
+HUDTitle/colors/font_outline_color = Color(0.16, 0.16, 0.18, 1)
+HUDTitle/constants/outline_size = 5
+HUDTitle/font_sizes/font_size = 18
+HUDCrosshair/base_type = &"Label"
+HUDCrosshair/colors/font_color = Color(1, 1, 1, 1)
+HUDCrosshair/colors/font_outline_color = Color(0.16, 0.16, 0.18, 1)
+HUDCrosshair/constants/outline_size = 5
+HUDCrosshair/font_sizes/font_size = 20
