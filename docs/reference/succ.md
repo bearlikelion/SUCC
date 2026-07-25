@@ -64,4 +64,4 @@ Missing input actions are reported with `push_warning()` and disabled individual
 func apply_config() -> void
 ```
 
-Re-derives collider size, `floor_snap_length` and camera height from the current `config`. Call it after assigning a new `SUCCConfig`; `_ready()` calls it for you on startup. See [Engine Presets](../presets.md).
+Re-derives collider size, `floor_snap_length` and camera height from the current `config`. Call it after assigning a new `SUCCConfig`; `_ready()` calls it for you on startup. See [Preset values](presets.md).

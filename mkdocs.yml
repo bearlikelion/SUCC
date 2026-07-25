@@ -53,14 +53,21 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - Quickstart: quickstart.md
-  - Engine Presets: presets.md
-  - Extending SUCC: extending.md
-  - Networking: networking.md
-  - API Reference:
-    - SUCC: api/succ.md
-    - SUCCPawn: api/succ_pawn.md
-    - SUCCConfig: api/succ_config.md
-    - SUCCCamera: api/succ_camera.md
+  - Tutorial: tutorial.md
+  - How-to Guides:
+    - Use a movement preset: how-to/use-a-preset.md
+    - Extend SUCC for your game: how-to/extend-succ.md
+    - Tune your own movement: how-to/tune-movement.md
+    - Add multiplayer: how-to/add-multiplayer.md
+  - Explanation:
+    - How the movement works: explanation/movement.md
+    - How accurate are the presets?: explanation/engine-accuracy.md
+    - The demo gym: explanation/demo-level.md
+  - Reference:
+    - Preset values: reference/presets.md
+    - SUCC: reference/succ.md
+    - SUCCConfig: reference/succ_config.md
+    - SUCCCamera: reference/succ_camera.md
+    - SUCCPawn: reference/succ_pawn.md
   - Games Built with SUCC: games.md
   - Acknowledgements: acknowledgements.md

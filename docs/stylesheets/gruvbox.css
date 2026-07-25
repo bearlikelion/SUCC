@@ -242,3 +242,344 @@ body,
 	color: var(--md-accent-fg-color) !important;
 	font-weight: 600;
 }
+
+/* ================================================================
+   markmakes.games alignment
+   Matches the terminal look of https://markmakes.games - harder
+   background, mono throughout, uppercase yellow headings with
+   markdown-style prefixes, dashed links.
+   ================================================================ */
+
+/* markmakes.games sits on the hard background, not dark0 */
+[data-md-color-scheme="gruvbox-dark"] {
+	--md-default-bg-color:          var(--gb-dark0-hard);
+	--md-default-bg-color--light:   var(--gb-dark0);
+	--md-default-bg-color--lighter: var(--gb-dark1);
+	--md-default-bg-color--lightest:var(--gb-dark2);
+	--md-code-bg-color:             var(--gb-dark0);
+	--md-typeset-a-color:           var(--gb-blue-bright);
+}
+
+/* Mono for the chrome, headings and code - the terminal identity - but a
+   sans face for long body prose. Monospace has no width variation to guide
+   the eye across a paragraph, which makes documentation tiring to read. */
+.md-nav,
+.md-header,
+.md-footer,
+.md-tabs {
+	font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4 {
+	font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* Body copy: comfortable measure and generous leading */
+.md-typeset {
+	line-height: 1.75;
+	font-size: 0.82rem;
+}
+
+.md-typeset p,
+.md-typeset li {
+	letter-spacing: 0.005em;
+}
+
+.md-typeset p {
+	margin: 0.9em 0;
+}
+
+.md-typeset ul,
+.md-typeset ol {
+	margin: 0.9em 0;
+}
+
+.md-typeset li {
+	margin: 0.45em 0;
+}
+
+.md-typeset li > ul,
+.md-typeset li > ol {
+	margin: 0.45em 0;
+}
+
+/* Breathing room around the section rules */
+.md-typeset h2 {
+	margin-top: 2.4em;
+	margin-bottom: 0.8em;
+}
+
+.md-typeset h3 {
+	margin-top: 1.8em;
+	margin-bottom: 0.6em;
+}
+
+/* Cap the line length: long mono-ish lines are the main readability killer */
+.md-typeset > p,
+.md-typeset > ul,
+.md-typeset > ol,
+.md-typeset > blockquote {
+	max-width: 46rem;
+}
+
+/* Tables get more air between columns */
+.md-typeset table:not([class]) th,
+.md-typeset table:not([class]) td {
+	padding: 0.6em 0.9em;
+}
+
+/* Headings: uppercase, tracked out, with the ## / ### prefix */
+.md-typeset h1 {
+	color: var(--gb-yellow-bright);
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+}
+[data-md-color-scheme="gruvbox-light"] .md-typeset h1 { color: var(--gb-yellow); }
+
+.md-typeset h2,
+.md-typeset h3 {
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+}
+
+.md-typeset h2::before {
+	content: "## ";
+	color: var(--gb-dark3);
+	font-weight: 400;
+}
+.md-typeset h3::before {
+	content: "### ";
+	color: var(--gb-dark3);
+	font-weight: 400;
+}
+[data-md-color-scheme="gruvbox-light"] .md-typeset h2::before,
+[data-md-color-scheme="gruvbox-light"] .md-typeset h3::before {
+	color: var(--gb-light3);
+}
+
+/* Anchor permalinks should not inherit the uppercase prefix treatment */
+.md-typeset .headerlink::before {
+	content: none;
+}
+
+/* Links are dashed on the site, solid on hover */
+.md-typeset a {
+	border-bottom: 1px dashed currentColor;
+}
+
+/* Bold is yellow, inline code is aqua */
+.md-typeset strong {
+	color: var(--gb-yellow-bright);
+	font-weight: 700;
+}
+[data-md-color-scheme="gruvbox-light"] .md-typeset strong { color: var(--gb-yellow); }
+
+.md-typeset p > code,
+.md-typeset li > code,
+.md-typeset td > code {
+	color: var(--gb-aqua-bright);
+	background-color: var(--gb-dark0);
+}
+[data-md-color-scheme="gruvbox-light"] .md-typeset p > code,
+[data-md-color-scheme="gruvbox-light"] .md-typeset li > code,
+[data-md-color-scheme="gruvbox-light"] .md-typeset td > code {
+	color: var(--gb-aqua);
+	background-color: var(--gb-light0-soft);
+}
+
+/* List markers use the dim border colour, as on the site */
+.md-typeset li::marker {
+	color: var(--gb-dark3);
+}
+[data-md-color-scheme="gruvbox-light"] .md-typeset li::marker {
+	color: var(--gb-light3);
+}
+
+/* Screenshots get a rounded border so they read as framed captures */
+.md-typeset img {
+	border-radius: 8px;
+	border: 1px solid var(--md-default-bg-color--lightest);
+}
+
+/* Blockquotes: orange rule, as on the site */
+.md-typeset blockquote {
+	border-left: 4px solid var(--gb-orange-bright);
+	background-color: var(--md-default-bg-color--light);
+	border-radius: 0 10px 10px 0;
+	padding: 0.6rem 1.2rem;
+	color: var(--md-default-fg-color--light);
+}
+[data-md-color-scheme="gruvbox-light"] .md-typeset blockquote {
+	border-left-color: var(--gb-orange);
+}
+
+/* ================================================================
+   Code block copy button
+   This Material version injects .md-code__button inside a
+   .md-code__nav container at runtime. The container's background comes
+   from --md-code-bg-color--light, which the gruvbox schemes never
+   defined, so it fell back to the theme default and clashed. Frame it
+   like every other panel and use the orange accent on hover.
+   ================================================================ */
+
+[data-md-color-scheme="gruvbox-dark"] {
+	--md-code-bg-color--light:   var(--gb-dark1);
+	--md-code-bg-color--lighter: var(--gb-dark2);
+}
+
+[data-md-color-scheme="gruvbox-light"] {
+	--md-code-bg-color--light:   var(--gb-light1);
+	--md-code-bg-color--lighter: var(--gb-light2);
+}
+
+.md-typeset .md-code__nav {
+	background-color: var(--md-default-bg-color--lighter);
+	border: 1px solid var(--md-default-bg-color--lightest);
+	border-radius: 4px;
+	padding: 0.2rem;
+	gap: 0.2rem;
+}
+
+.md-typeset .md-code__button {
+	color: var(--gb-gray);
+	border-radius: 3px;
+	transition: color .2s, background-color .2s;
+}
+
+.md-typeset .md-code__button:hover,
+.md-typeset .md-code__button.focus-visible {
+	color: var(--gb-orange-bright);
+	background-color: var(--md-default-bg-color--lightest);
+}
+
+.md-typeset .md-code__button--active {
+	color: var(--gb-green-bright) !important;
+}
+
+[data-md-color-scheme="gruvbox-light"] .md-typeset .md-code__button:hover,
+[data-md-color-scheme="gruvbox-light"] .md-typeset .md-code__button.focus-visible {
+	color: var(--gb-orange);
+}
+
+[data-md-color-scheme="gruvbox-light"] .md-typeset .md-code__button--active {
+	color: var(--gb-green) !important;
+}
+
+/* Older Material builds name it .md-clipboard; keep both working. */
+.md-typeset .md-clipboard {
+	color: var(--gb-gray);
+	transition: color .2s;
+}
+
+.md-typeset .md-clipboard:hover,
+.md-typeset .md-clipboard:focus {
+	color: var(--gb-orange-bright);
+}
+
+[data-md-color-scheme="gruvbox-light"] .md-typeset .md-clipboard:hover,
+[data-md-color-scheme="gruvbox-light"] .md-typeset .md-clipboard:focus {
+	color: var(--gb-orange);
+}
+
+/* Copied-confirmation tooltip matches the panel styling */
+.md-typeset .md-code__button::before,
+.md-typeset .md-clipboard::before {
+	background-color: var(--md-default-bg-color--lighter);
+	color: var(--md-default-fg-color);
+	border: 1px solid var(--md-default-bg-color--lightest);
+	border-radius: 4px;
+	font-size: 0.7rem;
+}
+
+/* Inline copy targets (pymdownx.inlinehilite) use the accent, not the default */
+.md-typeset .md-clipboard--inline:hover code,
+.md-typeset .md-clipboard--inline:focus code {
+	color: var(--gb-orange-bright);
+	background-color: rgba(254, 128, 25, 0.12);
+}
+[data-md-color-scheme="gruvbox-light"] .md-typeset .md-clipboard--inline:hover code,
+[data-md-color-scheme="gruvbox-light"] .md-typeset .md-clipboard--inline:focus code {
+	color: var(--gb-orange);
+	background-color: rgba(214, 93, 14, 0.12);
+}
+
+/* ================================================================
+   Header
+   The header sat on the same hard background as the page and its links
+   inherited the dimmed .md-nav__link colour, so the title, repo link
+   and drawer items flattened into the sidebar. Give the header its own
+   raised surface and a bottom rule, the way the site tabstrip does.
+   ================================================================ */
+
+.md-header {
+	background-color: var(--md-default-bg-color--light);
+	border-bottom: 1px solid var(--md-default-bg-color--lightest);
+	box-shadow: none;
+}
+
+.md-header--shadow {
+	box-shadow: 0 0 0.4rem rgba(0, 0, 0, 0.35);
+}
+
+/* Site title in the header uses the brand yellow, like the site brand */
+.md-header__title,
+.md-header__topic:first-child > .md-ellipsis {
+	color: var(--gb-yellow-bright);
+	font-weight: 700;
+}
+[data-md-color-scheme="gruvbox-light"] .md-header__title,
+[data-md-color-scheme="gruvbox-light"] .md-header__topic:first-child > .md-ellipsis {
+	color: var(--gb-yellow);
+}
+
+/* Header icons and repo link read as foreground, not as dimmed nav links */
+.md-header__button,
+.md-header__source {
+	color: var(--md-default-fg-color);
+}
+
+.md-header__button:hover,
+.md-header__source:hover {
+	color: var(--gb-orange-bright);
+	opacity: 1;
+}
+[data-md-color-scheme="gruvbox-light"] .md-header__button:hover,
+[data-md-color-scheme="gruvbox-light"] .md-header__source:hover {
+	color: var(--gb-orange);
+}
+
+/* Search field sits on the page background so it reads as an input */
+.md-search__form {
+	background-color: var(--md-default-bg-color);
+	border: 1px solid var(--md-default-bg-color--lightest);
+	border-radius: 4px;
+}
+
+.md-search__form:hover {
+	background-color: var(--md-default-bg-color);
+	border-color: var(--gb-orange-bright);
+}
+
+.md-search__input::placeholder {
+	color: var(--gb-gray);
+}
+
+/* The mobile drawer is a header surface, so keep its own links legible
+   rather than inheriting the dimmed sidebar treatment. */
+.md-nav--primary .md-nav__title {
+	background-color: var(--md-default-bg-color--light);
+	border-bottom: 1px solid var(--md-default-bg-color--lightest);
+	box-shadow: none;
+}
+
+[data-md-color-scheme="gruvbox-dark"] .md-nav--primary .md-nav__title {
+	color: var(--gb-yellow-bright);
+}
+[data-md-color-scheme="gruvbox-light"] .md-nav--primary .md-nav__title {
+	color: var(--gb-yellow);
+}

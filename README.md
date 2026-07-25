@@ -69,7 +69,7 @@ addons/SUCC/
 
 SUCC is **just the controller**. It does not provide health, ammo, scoring, checkpoints, UI, chat, VOIP, or leaderboards. Those live in your game code, extending `SUCC`.
 
-Example games and game modes will be published in the separate [**SUCC Demos**](https://github.com/bearlikelion/SUCC-Demos) repository.
+Example games and game modes will be published in the separate [**SUCC Demos**](https://github.com/bearlikelion/SUCC-Demos) repository. That project is a work in progress; it will be open-sourced under the MIT License once it's ready, with attribution required.
 
 ## Games built with SUCC
 

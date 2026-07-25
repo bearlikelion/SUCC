@@ -4,7 +4,7 @@ All physics and feel tuning. Swap configs at runtime to change character weight,
 
 Call [`SUCC.apply_config()`](succ.md) after replacing `config` at runtime so the collider, floor snap length and camera height are re-derived.
 
-Four engine-accurate presets ship with the addon - see [Engine Presets](../presets.md).
+Four engine-accurate presets ship with the addon - see [Preset values](presets.md).
 
 ## Unit helpers
 
