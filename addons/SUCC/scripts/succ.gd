@@ -1,4 +1,3 @@
-@tool
 class_name SUCC
 extends CharacterBody3D
 
@@ -8,7 +7,7 @@ extends CharacterBody3D
 #
 # Required input actions (rebindable via input_actions export):
 #   forward, back, left, right, jump, duck, crouch, sprint
-# Missing actions produce editor configuration warnings and are disabled at runtime.
+# Missing actions are disabled at runtime and reported via push_warning.
 
 
 signal movement_state_changed(old_state: MovementState, new_state: MovementState)
@@ -67,13 +66,15 @@ var _camera_step_offset: float = 0.0
 var _clearance_shape: BoxShape3D = BoxShape3D.new()
 var _clearance_params: PhysicsShapeQueryParameters3D = PhysicsShapeQueryParameters3D.new()
 
-@onready var collision: CollisionShape3D = $Collision
-@onready var camera_rig: SUCCCamera = $CameraRig
+@onready var collision: CollisionShape3D = get_node_or_null("Collision")
+@onready var camera_rig: SUCCCamera = get_node_or_null("CameraRig")
 
 
 func _ready() -> void:
-	if Engine.is_editor_hint():
-		return
+	if collision == null:
+		push_error("SUCC: missing child CollisionShape3D named 'Collision'.")
+	if camera_rig == null:
+		push_error("SUCC: missing child SUCCCamera named 'CameraRig'.")
 	if config == null:
 		config = load("res://addons/SUCC/resources/default_config.tres") as SUCCConfig
 	_validate_input_actions()
@@ -88,25 +89,8 @@ func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
-func _get_configuration_warnings() -> PackedStringArray:
-	var warnings: PackedStringArray = []
-	for logical: String in DEFAULT_INPUT_ACTIONS.keys():
-		var action: String = input_actions.get(logical, DEFAULT_INPUT_ACTIONS[logical])
-		if not _action_exists_in_project(action):
-			warnings.append(
-				"Input action '%s' (logical '%s') is not in the project's InputMap. "
-				% [action, logical]
-				+ "This movement will be disabled at runtime."
-			)
-	if not has_node("Collision"):
-		warnings.append("Missing child CollisionShape3D named 'Collision'.")
-	if not has_node("CameraRig"):
-		warnings.append("Missing child SUCCCamera node named 'CameraRig'.")
-	return warnings
-
-
 func _unhandled_input(event: InputEvent) -> void:
-	if Engine.is_editor_hint() or not is_multiplayer_authority():
+	if not is_multiplayer_authority():
 		return
 	if _can_look() and camera_rig:
 		camera_rig.handle_input(event, config)
@@ -144,7 +128,7 @@ func _wish_speed() -> float:
 
 
 func _physics_process(delta: float) -> void:
-	if Engine.is_editor_hint() or not is_multiplayer_authority():
+	if not is_multiplayer_authority():
 		return
 	if game_state == GameState.DISABLED or not _can_move():
 		velocity = Vector3.ZERO
@@ -160,7 +144,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _process(delta: float) -> void:
-	if Engine.is_editor_hint() or camera_rig == null:
+	if camera_rig == null:
 		return
 	if config.smooth_vertical_step and not is_equal_approx(_camera_step_offset, 0.0):
 		var t: float = clamp(config.step_smoothing_speed * delta, 0.0, 1.0)
@@ -453,15 +437,6 @@ func _validate_input_actions() -> void:
 		if not ok:
 			push_warning("SUCC: input action '%s' (logical '%s') not defined; disabling."
 				% [action, logical])
-
-
-# @tool-safe InputMap check. InputMap in the editor doesn't always reflect
-# project.godot actions when _get_configuration_warnings() runs, so fall back
-# to ProjectSettings which is authoritative.
-func _action_exists_in_project(action: String) -> bool:
-	if InputMap.has_action(action):
-		return true
-	return ProjectSettings.has_setting("input/" + action)
 
 
 func _action_strength(logical: String) -> float:

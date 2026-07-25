@@ -1,4 +1,3 @@
-@tool
 class_name SUCCCamera
 extends SpringArm3D
 
