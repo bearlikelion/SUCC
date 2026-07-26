@@ -32,7 +32,7 @@ shapes.
 |---|---|
 | WASD | Move |
 | Space | Jump (hold to bunnyhop) |
-| Ctrl | Duck |
+| Ctrl | Crouch |
 | Shift | Sprint |
 | V | First/third person |
 | F | Toggle surf jumps |
@@ -48,9 +48,9 @@ Five steps of 12 units (0.305 m) each, rising to a landing at 1.77 m.
 
 Twelve units is two-thirds of the 18-unit step limit every one of these engines uses.
 That's deliberate: at 16 units the flight technically works but feels like wading, because
-you're brushing the limit on every step. Walking up here should be smooth and unremarkable
-,  if it stutters, the [step handling](movement.md#why-stairs-need-special-handling) is
-broken.
+you're brushing the limit on every step. Walking up here should be smooth and
+unremarkable. If it stutters, the
+[step handling](movement.md#why-stairs-need-special-handling) is broken.
 
 To the right sits a lone **20-unit step (0.508 m)**, just above the limit. You cannot walk
 onto it. You can jump onto it. That's the boundary made visible.
@@ -108,18 +108,24 @@ automatically.
 
 ![The surf ramp, a peak with two sloped faces](../images/gym-surf.png)
 
-Two faces at **55°** meeting at an apex, forming a peak rather than a valley.
+Two faces at **53.1°** meeting at an apex 16.5 m up, forming a peak rather than a
+valley. The footprint is 24.4 m wide, which is the Momentum Mod mapping spec:
+960 x 640 units for a double-sided ramp, a 5:4 ratio.
 
-55° is past the 50° standing limit, so the surfaces never count as floor and you stay
+53.1° is past the 50° standing limit, so the surfaces never count as floor and you stay
 permanently airborne on them, which is exactly what
-[makes surfing work](movement.md#why-surfing-works). Walk up the yellow access ramp on the
-left (a walkable 35°) to the platform at the top, drop onto either face, and hold a strafe
-key into the slope.
+[makes surfing work](movement.md#why-surfing-works). Climb the yellow staircase on the
+left to the launch platform, drop onto either face, and hold a strafe key into the slope.
 
 The peak shape is the one real surf maps use, and it matters. On a peak you ride the
 outer face with open floor beside you, so easing off the strafe key drops you off the
 side. That is the skill the mode is built around. A valley would funnel you into the
 bottom and hold you there, which teaches nothing.
+
+Size matters as much as shape. The Momentum guide warns that "people may find
+themselves sliding off the bottoms of small ramps", and an undersized ramp gives you
+no time to build speed before you reach the floor. At 400 u/s you cross a spec-width
+ramp in about 2.4 seconds, against under a second on a ramp a third of that size.
 
 ## Slide
 

@@ -177,6 +177,10 @@ func _physics_process(delta: float) -> void:
 	# top of the tick leaves floor_type a frame stale, so the landing frame still
 	# looks airborne: gravity gets skipped, then reapplied, and the body bounces.
 	_set_floor_type(delta)
+	# After the move, so the landing frame sees FLOOR and can absorb an air duck's
+	# origin raise. Running it pre-move left floor_type a frame stale, and the raise
+	# survived the landing to drop the eye 0.58 m a few frames later.
+	_land_air_crouch()
 	_update_movement_state()
 
 
@@ -234,7 +238,6 @@ func _set_velocity(delta: float) -> void:
 		_crouch()
 	elif crouched and not wish_crouch:
 		_uncrouch()
-	_land_air_crouch()
 
 	# Ramps are too steep to walk, so they take air acceleration like being airborne,
 	# but you can still jump off one. That transfer jump is the core of surf.
