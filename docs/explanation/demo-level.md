@@ -117,6 +117,11 @@ permanently airborne on them, which is exactly what
 [makes surfing work](movement.md#why-surfing-works). Climb the yellow staircase on the
 left to the launch platform, drop onto either face, and hold a strafe key into the slope.
 
+The staircase is 22 steps of 16-unit risers with **40-unit (1.016 m) treads**. The tread
+depth matters as much as the riser height: the player hull is 32 units deep, so a tread
+much narrower than that leaves the body straddling two risers at once and the step-up
+logic thrashes. At 40 units there is 25% clearance and the climb is smooth.
+
 The peak shape is the one real surf maps use, and it matters. On a peak you ride the
 outer face with open floor beside you, so easing off the strafe key drops you off the
 side. That is the skill the mode is built around. A valley would funnel you into the

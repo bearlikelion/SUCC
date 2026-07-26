@@ -33,8 +33,6 @@ const DEFAULT_INPUT_ACTIONS: Dictionary[String, String] = {
 	"sprint": "sprint",
 }
 const FLOOR_COL_MARGIN: float = 0.02
-# Fraction of the requested move below which the body counts as blocked.
-const BLOCKED_TRAVEL_FRACTION: float = 0.9
 # Below this the contact is a wall, not a ramp you could surf. Matches
 # SourceMover.MIN_RAMP_NORMAL_Y in SurfsUp v2.
 const MIN_RAMP_NORMAL_Y: float = 0.01
@@ -331,18 +329,18 @@ func _move_body(delta: float) -> void:
 	var prev_vy: float = velocity.y
 	var start_pos: Vector3 = global_position
 	var start_vel: Vector3 = velocity
-	var wanted: float = Vector2(start_vel.x, start_vel.z).length() * delta
 	var grounded: bool = is_on_floor() or was_on_floor
+
+	# Source WalkMove traces flat to the destination BEFORE moving and steps whenever
+	# that trace hit anything (gamemovement.cpp:1986, `pm.fraction == 1` returns
+	# early). Deciding after the move cannot work at grazing angles: approaching a
+	# step at 85 degrees still covers 99% of the requested distance, and the hull
+	# only brushes the riser so no wall contact is reported either.
+	var flat_step: Vector3 = Vector3(start_vel.x, 0.0, start_vel.z) * delta
+	var blocked: bool = flat_step.length() > 0.001 and test_move(global_transform, flat_step)
 
 	move_and_slide()
 	_clip_velocity_to_contacts()
-
-	# Source WalkMove only reaches StepMove when the plain move was blocked
-	# (gamemovement.cpp:1986); stepping unconditionally lifts and drops the body
-	# every frame, which stalls flat-ground movement.
-	var moved: Vector3 = global_position - start_pos
-	var blocked: bool = wanted > 0.001 \
-		and Vector2(moved.x, moved.z).length() < wanted * BLOCKED_TRAVEL_FRACTION
 
 	# Source StepMove: keep the plain slide result, then retry the whole move from a
 	# step height up and commit whichever covered more ground. Re-running the move
@@ -385,11 +383,6 @@ func _move_body(delta: float) -> void:
 # velocity, so no momentum is synthesised and ramps cannot fling the body.
 # Returns false when the stepped attempt found no walkable ground.
 func _try_step_move(start_pos: Vector3, start_vel: Vector3) -> bool:
-	# Nothing to step onto if what blocked us is a slope rather than a lip. Bailing
-	# here keeps the body from lifting and dropping every frame at a ramp's foot.
-	if not _blocked_by_steppable_surface():
-		return false
-
 	global_position = start_pos
 	velocity = start_vel
 
@@ -422,18 +415,6 @@ func _try_step_move(start_pos: Vector3, start_vel: Vector3) -> bool:
 
 # Takes the largest single step rather than summing: climbing consecutive risers adds
 # faster than the offset decays, and accumulated lag reads as the camera sinking.
-# True when at least one contact from the last move is a near-vertical face, i.e. a
-# step or lip. A surf ramp blocks horizontally too, but stepping onto it is never
-# valid, so the whole attempt can be skipped.
-func _blocked_by_steppable_surface() -> bool:
-	for i: int in get_slide_collision_count():
-		var normal: Vector3 = get_slide_collision(i).get_normal()
-		# Walls and lips have a near-zero vertical component; slopes do not.
-		if absf(normal.y) < cos(max_floor_angle):
-			return true
-	return false
-
-
 func _add_camera_step_offset(amount: float) -> void:
 	var limit: float = config.step_height
 	if absf(amount) > absf(_camera_step_offset):
