@@ -4,6 +4,8 @@ All notable changes to SUCC are documented here. Format follows [Keep a Changelo
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-07-26
+
 ### Changed
 
 - Stair traversal now render-interpolates the first-person camera and optional
@@ -14,6 +16,14 @@ All notable changes to SUCC are documented here. Format follows [Keep a Changelo
   immediately. The SurfsUp default uses 7.5 m/s in both directions.
 - Air crouches remain immediate and raise the legs while holding the head at the same
   world height, matching Source-style crouch jumping.
+
+### Notes if you were using 0.1.0
+
+- `crouch_time` and `uncrouch_time` are replaced by `crouch_smoothing_speed` and
+  `uncrouch_smoothing_speed`, which are rates in m/s rather than durations in seconds. The
+  bundled presets are updated; a hand-authored `SUCCConfig` falls back to the 7.5 m/s
+  default. To convert, divide the eye travel distance (`standing_view_offset` minus
+  `crouch_view_offset`) by your old time.
 
 ## [0.1.0] - 2026-07-25
 
@@ -73,5 +83,6 @@ Most of these were found by running the movement against the original engine sou
 - **Camera offsets never reached the screen.** Step smoothing wrote `camera.position.y`, but the camera is a child of a `SpringArm3D`, which overwrites its child's transform every frame. Offsets now move the arm itself through a `view_height` property, so stair smoothing works for the first time, and head bob works at all.
 - `_has_clearance()` allocated a shape and query parameters on every call.
 
-[Unreleased]: https://github.com/bearlikelion/SUCC/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/bearlikelion/SUCC/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/bearlikelion/SUCC/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/bearlikelion/SUCC/releases/tag/v0.1.0
