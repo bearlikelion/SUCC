@@ -43,11 +43,12 @@ ready, with attribution required.
 
 ## Install
 
-**Godot Asset Library** (recommended): search for "SUCC" in the editor's AssetLib tab.
-
-**Manual**: download the latest [release zip](https://github.com/bearlikelion/SUCC/releases)
+**Manual** (recommended): download the latest [release zip](https://github.com/bearlikelion/SUCC/releases)
 and copy `addons/SUCC/` into your project's `addons/` folder. The scripts use `class_name`,
 so Godot registers them automatically. There is no Plugins toggle.
+
+**Godot Asset Store**: [SUCC on the asset store](https://store.godotengine.org/asset/bearlikelion/succ/)
+is pending approval. Use the manual install until it's live.
 
 Requires Godot 4.6 or newer.
 
