@@ -82,14 +82,12 @@ var _crouch_tween: Tween
 # unduck drops it again and a landing can absorb it.
 var _air_crouch_raised: bool = false
 var _air_crouch_raise: float = 0.0
-# Eye height the camera is chasing, trailing the body's real Y after a step.
-var _smoothed_view_y: float = 0.0
 # Applied eye offset, rate-limited so a one-tick step cannot jolt the view.
 var _view_offset: float = 0.0
 var _previous_view_offset: float = 0.0
 var _visual_step_offset: float = 0.0
 var _previous_visual_step_offset: float = 0.0
-var _applied_visual_step_offset: float = 0.0
+var _visual_root_base_y: float = 0.0
 var _step_smoothing_grade: float = 0.0
 var _skip_step_probe_once: bool = false
 var _clearance_shape: BoxShape3D = BoxShape3D.new()
@@ -111,6 +109,8 @@ func _ready() -> void:
 	floor_max_angle = max_floor_angle
 	floor_block_on_wall = false
 	camera_mode = default_camera_mode
+	if visual_root:
+		_visual_root_base_y = visual_root.position.y
 	apply_config()
 	if camera_rig:
 		camera_rig.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
@@ -131,7 +131,6 @@ func apply_config() -> void:
 	_apply_collider_size(config.stand_height)
 	# Snap far enough to hold the floor when descending a full step.
 	floor_snap_length = config.step_height + FLOOR_COL_MARGIN
-	_smoothed_view_y = global_position.y
 	_view_offset = 0.0
 	_previous_view_offset = 0.0
 	_visual_step_offset = 0.0
@@ -535,7 +534,6 @@ func _smooth_automatic_floor_drop(previous_y: float) -> void:
 func _absorb_upward_step_settle(drop: float) -> void:
 	if _view_offset < -0.001:
 		_view_offset = minf(_view_offset + drop, 0.0)
-		_smoothed_view_y = global_position.y + _view_offset
 	if _visual_step_offset < -0.001:
 		_visual_step_offset = minf(_visual_step_offset + drop, 0.0)
 
@@ -561,12 +559,10 @@ func _step_landing_ray(
 	return space.intersect_ray(query)
 
 
-# Source SmoothViewOnStairs (baseplayer_shared.cpp): the eye chases the body's actual
-# height at a constant rate, capped to a fixed lag. Tracking absolute height rather than
-# accumulating per-step offsets is what keeps consecutive risers smooth, since a new step
-# arriving mid-catch-up just moves the target instead of restarting the easing.
+# After Source SmoothViewOnStairs (baseplayer_shared.cpp), but decaying the outstanding
+# offset rather than chasing an absolute height: a step arriving mid-decay just adds to
+# the offset, so consecutive risers never restart the easing.
 func _smooth_view_on_stairs(delta: float) -> void:
-	var current_y: float = global_position.y
 	var horizontal_speed: float = Vector2(velocity.x, velocity.z).length()
 	var smoothing_speed: float = horizontal_speed * _step_smoothing_grade
 	if smoothing_speed < 0.001:
@@ -582,13 +578,11 @@ func _smooth_view_on_stairs(delta: float) -> void:
 	# the two fight. Leaving the ground is not a reason to discard it: zeroing mid-climb
 	# snaps the eye by whatever was outstanding, which is what a jump off a stair did.
 	if not config.smooth_vertical_step or _crouch_view_tween_active():
-		_smoothed_view_y = current_y
 		_view_offset = 0.0
 		return
 
 	# Speed matching avoids a rise-pause cycle between treads.
 	_view_offset = move_toward(_view_offset, 0.0, smoothing_speed * delta)
-	_smoothed_view_y = current_y + _view_offset
 
 
 # Preserve the eye's world height when stair stepping teleports the body.
@@ -609,7 +603,6 @@ func _absorb_view_shift(shift: float) -> void:
 	_view_offset = clampf(
 		_view_offset - shift, -config.step_height * 2.0, config.step_height * 2.0
 	)
-	_smoothed_view_y = global_position.y + _view_offset
 
 
 func _apply_render_step_offsets() -> void:
@@ -632,10 +625,8 @@ func _apply_render_step_offsets() -> void:
 
 func _set_visual_step_offset(offset: float) -> void:
 	if visual_root == null:
-		_applied_visual_step_offset = 0.0
 		return
-	visual_root.position.y += offset - _applied_visual_step_offset
-	_applied_visual_step_offset = offset
+	visual_root.position.y = _visual_root_base_y + offset
 
 
 func _step_run_estimate() -> float:
