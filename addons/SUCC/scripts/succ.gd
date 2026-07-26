@@ -384,6 +384,12 @@ func _move_body(delta: float) -> void:
 		was_on_floor = true
 		return
 
+	# Bunnyhopping a staircase puts the hull into a riser mid-arc, and clipping against
+	# that near-vertical face costs the whole run-up. A riser within step_height is
+	# something to clear, not a wall, so lift over it before the slide.
+	if not grounded:
+		_air_step_up(delta)
+
 	move_and_slide()
 	_clip_velocity_to_contacts()
 	var flat_pos: Vector3 = global_position
@@ -427,6 +433,34 @@ func _step_up(delta: float) -> bool:
 	if not test_move(global_transform, block_motion, block):
 		return false
 	return _attempt_step_up(motion, _lowest_collision_normal_y(block), false)
+
+
+# Airborne counterpart to _step_up. Applies through the whole arc, not just the rise:
+# a hop across a staircase usually meets the next riser on the way down.
+func _air_step_up(delta: float) -> bool:
+	var motion: Vector3 = Vector3(velocity.x, 0.0, velocity.z) * delta
+	if motion.length() < 0.0001:
+		return false
+
+	# Only act when a near-vertical face actually blocks the horizontal move. A walkable
+	# slope also blocks it, but move_and_slide handles that correctly.
+	var block: KinematicCollision3D = KinematicCollision3D.new()
+	var block_motion: Vector3 = motion + motion.normalized() * FLOOR_COL_MARGIN * 2.0
+	if not test_move(global_transform, block_motion, block):
+		return false
+	if _lowest_collision_normal_y(block) >= cos(max_floor_angle):
+		return false
+
+	# Find the lowest lift that clears the obstruction, capped at one step.
+	var probe: float = FLOOR_COL_MARGIN
+	while probe <= config.step_height + FLOOR_COL_MARGIN:
+		var raised: Transform3D = global_transform.translated(Vector3.UP * probe)
+		if not test_move(raised, motion):
+			global_position = raised.origin
+			return true
+		probe += config.step_height * 0.25
+
+	return false
 
 
 func _lowest_collision_normal_y(hit: KinematicCollision3D) -> float:
