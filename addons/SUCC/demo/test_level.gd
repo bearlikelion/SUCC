@@ -118,7 +118,9 @@ func _build_hint() -> String:
 		if not key.is_empty():
 			parts.append("%s %s" % [key, actions[action]])
 
-	parts.append("Esc mouse")
+	if OS.has_feature("web"):
+		parts.append("Click capture")
+	parts.append("Esc release")
 	return " | ".join(parts) + "\n1-5 swap movement preset"
 
 

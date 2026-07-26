@@ -116,7 +116,12 @@ func _ready() -> void:
 		camera_rig.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	if visual_root:
 		visual_root.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	# On web there has been no user gesture yet, so a capture here is rejected and
+	# Firefox never recovers. The first click captures instead.
+	if OS.has_feature("web"):
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	else:
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
 # Re-derive collider, snap length and camera from config. Call after swapping config.
@@ -149,11 +154,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if _can_look() and camera_rig:
 		camera_rig.handle_input(event, config)
-	if event.is_action_pressed("ui_cancel"):
-		if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-		else:
-			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	# Browsers only grant pointer lock from a user gesture, and Firefox refuses to
+	# re-grant it from the same Escape press that released it. Recapture on click.
+	if event is InputEventMouseButton and event.pressed \
+	and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		return
+	if event.is_action_pressed("ui_cancel") \
+	and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 
 func _gather_movement_input() -> void:
