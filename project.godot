@@ -16,12 +16,11 @@ run/main_scene="res://addons/SUCC/demo/test_level.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 boot_splash/bg_color=Color(0.02745098, 0.09411765, 0.15686275, 1)
 boot_splash/image="uid://dd3tlvtknxctx"
+config/icon="uid://dd3tlvtknxctx"
 
-[autoload]
+[display]
 
-MCPScreenshot="*res://addons/godot_mcp/mcp_screenshot_service.gd"
-MCPInputService="*res://addons/godot_mcp/mcp_input_service.gd"
-MCPGameInspector="*res://addons/godot_mcp/mcp_game_inspector_service.gd"
+window/stretch/mode="canvas_items"
 
 [editor_plugins]
 
