@@ -44,11 +44,17 @@ const PRESETS: Array[Dictionary] = [
 @onready var preset_detail: Label = %PresetDetail
 @onready var flags_label: Label = %FlagsLabel
 @onready var hint_label: Label = %Hint
+@onready var jump_sound: AudioStreamPlayer = %JumpSound
 
 
 func _ready() -> void:
 	hint_label.text = _build_hint()
 	_apply_preset(0)
+	player.jumped.connect(_on_player_jumped)
+
+
+func _on_player_jumped() -> void:
+	jump_sound.play()
 
 
 func _process(_delta: float) -> void:

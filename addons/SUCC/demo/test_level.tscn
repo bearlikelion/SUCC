@@ -2,7 +2,9 @@
 
 [ext_resource type="PackedScene" uid="uid://dyx826m71ip5e" path="res://addons/SUCC/scenes/succ_character.tscn" id="1_player"]
 [ext_resource type="Script" uid="uid://bdssrppl6wfw3" path="res://addons/SUCC/demo/test_level.gd" id="2_level"]
+[ext_resource type="Texture2D" uid="uid://da43pqfhnr1ew" path="res://addons/SUCC/demo/texture_06.png" id="3_78e84"]
 [ext_resource type="Theme" path="res://addons/SUCC/demo/demo.tres" id="3_theme"]
+[ext_resource type="AudioStream" uid="uid://ss4lporqojg" path="res://addons/SUCC/demo/jump.ogg" id="4_jump"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_ahl2s"]
 sky_top_color = Color(0.13, 0.18, 0.28, 1)
@@ -20,7 +22,8 @@ ambient_light_energy = 0.5
 tonemap_mode = 2
 
 [sub_resource type="StandardMaterial3D" id="Mat_Gray"]
-albedo_color = Color(0.52, 0.52, 0.56, 1)
+albedo_color = Color(0.5882353, 0.5882353, 0.5882353, 1)
+albedo_texture = ExtResource("3_78e84")
 
 [sub_resource type="StandardMaterial3D" id="Mat_Accent"]
 albedo_color = Color(0.74, 0.66, 0.28, 1)
@@ -53,6 +56,10 @@ shadow_enabled = true
 [node name="Player" parent="." unique_id=1749752620 instance=ExtResource("1_player")]
 unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 1, 24)
+
+[node name="JumpSound" type="AudioStreamPlayer" parent="." unique_id=200000001]
+unique_name_in_owner = true
+stream = ExtResource("4_jump")
 
 [node name="Floor" type="CSGBox3D" parent="." unique_id=697389564]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, -1)
@@ -216,133 +223,133 @@ material = SubResource("Mat_Accent")
 [node name="Stair01" type="CSGBox3D" parent="Surf" unique_id=151000001]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 0.2032, 35.336)
 use_collision = true
-size = Vector3(4, 0.4064, 1.0160)
+size = Vector3(4, 0.4064, 1.016)
 material = SubResource("Mat_Accent")
 
 [node name="Stair02" type="CSGBox3D" parent="Surf" unique_id=151000002]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 0.4064, 34.320)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 0.4064, 34.32)
 use_collision = true
-size = Vector3(4, 0.8128, 1.0160)
+size = Vector3(4, 0.8128, 1.016)
 material = SubResource("Mat_Accent")
 
 [node name="Stair03" type="CSGBox3D" parent="Surf" unique_id=151000003]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 0.6096, 33.304)
 use_collision = true
-size = Vector3(4, 1.2192, 1.0160)
+size = Vector3(4, 1.2192, 1.016)
 material = SubResource("Mat_Accent")
 
 [node name="Stair04" type="CSGBox3D" parent="Surf" unique_id=151000004]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 0.8128, 32.288)
 use_collision = true
-size = Vector3(4, 1.6256, 1.0160)
+size = Vector3(4, 1.6256, 1.016)
 material = SubResource("Mat_Accent")
 
 [node name="Stair05" type="CSGBox3D" parent="Surf" unique_id=151000005]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 1.0160, 31.272)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 1.016, 31.272)
 use_collision = true
-size = Vector3(4, 2.0320, 1.0160)
+size = Vector3(4, 2.032, 1.016)
 material = SubResource("Mat_Accent")
 
 [node name="Stair06" type="CSGBox3D" parent="Surf" unique_id=151000006]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 1.2192, 30.256)
 use_collision = true
-size = Vector3(4, 2.4384, 1.0160)
+size = Vector3(4, 2.4384, 1.016)
 material = SubResource("Mat_Accent")
 
 [node name="Stair07" type="CSGBox3D" parent="Surf" unique_id=151000007]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 1.4224, 29.240)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 1.4224, 29.24)
 use_collision = true
-size = Vector3(4, 2.8448, 1.0160)
+size = Vector3(4, 2.8448, 1.016)
 material = SubResource("Mat_Accent")
 
 [node name="Stair08" type="CSGBox3D" parent="Surf" unique_id=151000008]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 1.6256, 28.224)
 use_collision = true
-size = Vector3(4, 3.2512, 1.0160)
+size = Vector3(4, 3.2512, 1.016)
 material = SubResource("Mat_Accent")
 
 [node name="Stair09" type="CSGBox3D" parent="Surf" unique_id=151000009]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 1.8288, 27.208)
 use_collision = true
-size = Vector3(4, 3.6576, 1.0160)
+size = Vector3(4, 3.6576, 1.016)
 material = SubResource("Mat_Accent")
 
 [node name="Stair10" type="CSGBox3D" parent="Surf" unique_id=151000010]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 2.0320, 26.192)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 2.032, 26.192)
 use_collision = true
-size = Vector3(4, 4.0640, 1.0160)
+size = Vector3(4, 4.064, 1.016)
 material = SubResource("Mat_Accent")
 
 [node name="Stair11" type="CSGBox3D" parent="Surf" unique_id=151000011]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 2.2352, 25.176)
 use_collision = true
-size = Vector3(4, 4.4704, 1.0160)
+size = Vector3(4, 4.4704, 1.016)
 material = SubResource("Mat_Accent")
 
 [node name="Stair12" type="CSGBox3D" parent="Surf" unique_id=151000012]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 2.4384, 24.160)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 2.4384, 24.16)
 use_collision = true
-size = Vector3(4, 4.8768, 1.0160)
+size = Vector3(4, 4.8768, 1.016)
 material = SubResource("Mat_Accent")
 
 [node name="Stair13" type="CSGBox3D" parent="Surf" unique_id=151000013]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 2.6416, 23.144)
 use_collision = true
-size = Vector3(4, 5.2832, 1.0160)
+size = Vector3(4, 5.2832, 1.016)
 material = SubResource("Mat_Accent")
 
 [node name="Stair14" type="CSGBox3D" parent="Surf" unique_id=151000014]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 2.8448, 22.128)
 use_collision = true
-size = Vector3(4, 5.6896, 1.0160)
+size = Vector3(4, 5.6896, 1.016)
 material = SubResource("Mat_Accent")
 
 [node name="Stair15" type="CSGBox3D" parent="Surf" unique_id=151000015]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 3.0480, 21.112)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 3.048, 21.112)
 use_collision = true
-size = Vector3(4, 6.0960, 1.0160)
+size = Vector3(4, 6.096, 1.016)
 material = SubResource("Mat_Accent")
 
 [node name="Stair16" type="CSGBox3D" parent="Surf" unique_id=151000016]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 3.2512, 20.096)
 use_collision = true
-size = Vector3(4, 6.5024, 1.0160)
+size = Vector3(4, 6.5024, 1.016)
 material = SubResource("Mat_Accent")
 
 [node name="Stair17" type="CSGBox3D" parent="Surf" unique_id=151000017]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 3.4544, 19.080)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 3.4544, 19.08)
 use_collision = true
-size = Vector3(4, 6.9088, 1.0160)
+size = Vector3(4, 6.9088, 1.016)
 material = SubResource("Mat_Accent")
 
 [node name="Stair18" type="CSGBox3D" parent="Surf" unique_id=151000018]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 3.6576, 18.064)
 use_collision = true
-size = Vector3(4, 7.3152, 1.0160)
+size = Vector3(4, 7.3152, 1.016)
 material = SubResource("Mat_Accent")
 
 [node name="Stair19" type="CSGBox3D" parent="Surf" unique_id=151000019]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 3.8608, 17.048)
 use_collision = true
-size = Vector3(4, 7.7216, 1.0160)
+size = Vector3(4, 7.7216, 1.016)
 material = SubResource("Mat_Accent")
 
 [node name="Stair20" type="CSGBox3D" parent="Surf" unique_id=151000020]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 4.0640, 16.032)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 4.064, 16.032)
 use_collision = true
-size = Vector3(4, 8.1280, 1.0160)
+size = Vector3(4, 8.128, 1.016)
 material = SubResource("Mat_Accent")
 
 [node name="Stair21" type="CSGBox3D" parent="Surf" unique_id=151000021]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 4.2672, 15.016)
 use_collision = true
-size = Vector3(4, 8.5344, 1.0160)
+size = Vector3(4, 8.5344, 1.016)
 material = SubResource("Mat_Accent")
 
 [node name="Stair22" type="CSGBox3D" parent="Surf" unique_id=151000022]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 4.4704, 14.000)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 4.4704, 14)
 use_collision = true
-size = Vector3(4, 8.9408, 1.0160)
+size = Vector3(4, 8.9408, 1.016)
 material = SubResource("Mat_Accent")
 
 [node name="Slide" type="Node3D" parent="." unique_id=160000000]
@@ -367,32 +374,6 @@ size = Vector3(2.5, 0.4, 17)
 material = SubResource("Mat_Accent")
 
 [node name="UI" type="CanvasLayer" parent="." unique_id=1717347338]
-
-
-[node name="Barriers" type="Node3D" parent="." unique_id=190000000]
-[node name="BarrierNorth" type="CSGBox3D" parent="Barriers" unique_id=190000001]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 4, 42.5)
-use_collision = true
-visible = false
-size = Vector3(96, 8, 1)
-
-[node name="BarrierSouth" type="CSGBox3D" parent="Barriers" unique_id=190000002]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 4, -44.5)
-use_collision = true
-visible = false
-size = Vector3(96, 8, 1)
-
-[node name="BarrierEast" type="CSGBox3D" parent="Barriers" unique_id=190000003]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 63.5, 4, -1)
-use_collision = true
-visible = false
-size = Vector3(1, 8, 88)
-
-[node name="BarrierWest" type="CSGBox3D" parent="Barriers" unique_id=190000004]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -31.5, 4, -1)
-use_collision = true
-visible = false
-size = Vector3(1, 8, 88)
 
 [node name="HUD" type="Control" parent="UI" unique_id=180000015]
 layout_mode = 3
@@ -497,3 +478,29 @@ grow_horizontal = 2
 grow_vertical = 0
 text = "<INPUT INSTRUCTIONS HINT>"
 vertical_alignment = 2
+
+[node name="Barriers" type="Node3D" parent="." unique_id=190000000]
+
+[node name="BarrierNorth" type="CSGBox3D" parent="Barriers" unique_id=190000001]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 4, 42.5)
+visible = false
+use_collision = true
+size = Vector3(96, 8, 1)
+
+[node name="BarrierSouth" type="CSGBox3D" parent="Barriers" unique_id=190000002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 4, -44.5)
+visible = false
+use_collision = true
+size = Vector3(96, 8, 1)
+
+[node name="BarrierEast" type="CSGBox3D" parent="Barriers" unique_id=190000003]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 63.5, 4, -1)
+visible = false
+use_collision = true
+size = Vector3(1, 8, 88)
+
+[node name="BarrierWest" type="CSGBox3D" parent="Barriers" unique_id=190000004]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -31.5, 4, -1)
+visible = false
+use_collision = true
+size = Vector3(1, 8, 88)

@@ -102,8 +102,10 @@ func handle_input(event: InputEvent, config: SUCCConfig) -> void:
 	if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
 		return
 	var motion: InputEventMouseMotion = event
-	var viewport_transform: Transform2D = get_tree().root.get_final_transform()
-	var relative: Vector2 = motion.xformed_by(viewport_transform).relative
+	# screen_relative skips the content scale factor, so sensitivity does not shift
+	# with window size. relative also picks up a rightward drift under Firefox's
+	# pointer lock on the web export.
+	var relative: Vector2 = motion.screen_relative
 	relative *= config.mouse_sensitivity * deg_to_rad(config.degrees_per_unit)
 	_accumulated += relative
 	_apply_rotation()
