@@ -21,6 +21,7 @@ step_height = 0.457201
 standing_view_offset = 1.168402
 crouch_view_offset = 1.168402
 crouch_time = 0.0
+uncrouch_time = 0.0
 bob_amount = 0.02
 bob_cycle = 0.6
 bob_up = 0.5

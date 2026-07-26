@@ -42,6 +42,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9145, 0)
 shape = SubResource("BoxShape3D_1")
 
 [node name="CameraRig" type="SpringArm3D" parent="." unique_id=1876563887]
+physics_interpolation_mode = 2
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.711, 0)
 spring_length = 0.0
 script = ExtResource("2_cam")

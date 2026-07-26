@@ -76,8 +76,10 @@ var _crouch_tween: Tween
 # unduck drops it again and a landing can absorb it.
 var _air_crouch_raised: bool = false
 var _air_crouch_raise: float = 0.0
-# Decayed toward 0 in _process so the camera lags behind abrupt body Y snaps.
-var _camera_step_offset: float = 0.0
+# Eye height the camera is chasing, trailing the body's real Y after a step.
+var _smoothed_view_y: float = 0.0
+# Applied eye offset, rate-limited so a one-tick step cannot jolt the view.
+var _view_offset: float = 0.0
 var _clearance_shape: BoxShape3D = BoxShape3D.new()
 var _clearance_params: PhysicsShapeQueryParameters3D = PhysicsShapeQueryParameters3D.new()
 
@@ -112,7 +114,8 @@ func apply_config() -> void:
 	_apply_collider_size(config.stand_height)
 	# Snap far enough to hold the floor when descending a full step.
 	floor_snap_length = config.step_height + FLOOR_COL_MARGIN
-	_camera_step_offset = 0.0
+	_smoothed_view_y = global_position.y
+	_view_offset = 0.0
 	if camera_rig:
 		camera_rig.set_step_offset(0.0)
 		camera_rig.view_height = config.standing_view_offset
@@ -185,13 +188,7 @@ func _physics_process(delta: float) -> void:
 func _process(delta: float) -> void:
 	if camera_rig == null:
 		return
-	if config.smooth_vertical_step and not is_equal_approx(_camera_step_offset, 0.0):
-		# Source closes this gap at a constant rate (150 u/s in SmoothViewOnStairs);
-		# a lerp fraction is framerate-dependent and jitters on consecutive lips.
-		_camera_step_offset = move_toward(
-			_camera_step_offset, 0.0, config.step_smoothing_speed * delta
-		)
-		camera_rig.set_step_offset(_camera_step_offset)
+	_smooth_view_on_stairs(delta)
 
 	if camera_mode != CameraMode.FIRST_PERSON:
 		return
@@ -360,22 +357,44 @@ func _move_body(delta: float) -> void:
 		if not stepped or flat_dist > step_dist:
 			global_position = flat_pos
 			velocity = flat_vel
+			# Source falls back to TryPlayerMove's velocity, which has been clipped
+			# along the blocking plane and keeps its tangential component. Godot's
+			# move_and_slide leaves nothing when the hull meets a riser face square on,
+			# so a step the gate had already approved would commit a dead stop and cost
+			# the whole run its momentum. Re-clip from the entry velocity instead.
+			_recover_blocked_velocity(start_vel)
 		else:
 			# Vertical velocity comes from the plain move; the step is a position fix.
 			velocity.y = flat_vel.y
+			# Absorb the lift here, in the tick that caused it. Leaving this to _process
+			# lets the raw teleport reach the eye for one whole frame first, which is a
+			# full-riser jump upward no smoothing downstream can undo.
 			if config.smooth_vertical_step:
-				_add_camera_step_offset(start_pos.y - global_position.y)
+				_absorb_body_rise(start_pos.y)
 
-	# Stair descent via floor_snap_length drops Y without a collision, so seed the
-	# camera offset from the drop itself.
-	if config.smooth_vertical_step and was_on_floor and is_on_floor():
-		var y_drop: float = start_pos.y - global_position.y
-		if y_drop > 0.05:
-			_add_camera_step_offset(y_drop)
 
 	if is_on_floor() and not was_on_floor:
 		landed.emit(prev_vy)
 	was_on_floor = is_on_floor()
+
+
+# Rebuild horizontal speed from the entry velocity clipped along whatever blocked the
+# move, matching what Source's TryPlayerMove leaves behind. Only raises speed, so a
+# genuine head-on wall still stops the body.
+func _recover_blocked_velocity(start_vel: Vector3) -> void:
+	var flat_start: Vector3 = Vector3(start_vel.x, 0.0, start_vel.z)
+	if flat_start.length_squared() < 0.000001:
+		return
+	var clipped: Vector3 = flat_start
+	for i: int in get_slide_collision_count():
+		var normal: Vector3 = get_slide_collision(i).get_normal()
+		if clipped.dot(normal) < 0.0:
+			clipped = clipped.slide(normal)
+	clipped.y = 0.0
+	if clipped.length() <= Vector2(velocity.x, velocity.z).length():
+		return
+	velocity.x = clipped.x
+	velocity.z = clipped.z
 
 
 # Re-runs the move from one step height up, then drops back down onto the tread.
@@ -413,12 +432,49 @@ func _try_step_move(start_pos: Vector3, start_vel: Vector3) -> bool:
 	return true
 
 
-# Takes the largest single step rather than summing: climbing consecutive risers adds
-# faster than the offset decays, and accumulated lag reads as the camera sinking.
-func _add_camera_step_offset(amount: float) -> void:
-	var limit: float = config.step_height
-	if absf(amount) > absf(_camera_step_offset):
-		_camera_step_offset = clamp(amount, -limit, limit)
+# Source SmoothViewOnStairs (baseplayer_shared.cpp): the eye chases the body's actual
+# height at a constant rate, capped to a fixed lag. Tracking absolute height rather than
+# accumulating per-step offsets is what keeps consecutive risers smooth, since a new step
+# arriving mid-catch-up just moves the target instead of restarting the easing.
+func _smooth_view_on_stairs(delta: float) -> void:
+	var current_y: float = global_position.y
+	# A crouch ease owns the eye height outright, so drop any step lag rather than let
+	# the two fight. Leaving the ground is not a reason to discard it: zeroing mid-climb
+	# snaps the eye by whatever was outstanding, which is what a jump off a stair did.
+	if not config.smooth_vertical_step or _crouch_view_tween_active():
+		_smoothed_view_y = current_y
+		_view_offset = 0.0
+		camera_rig.set_step_offset(0.0)
+		return
+
+	# Source closes this at a flat 150 u/s (SmoothViewOnStairs). Keep it flat: a rate that
+	# scales with the outstanding lag makes the frame right after a step the fastest one,
+	# which is the frame that most needs to be gentle.
+	_view_offset = move_toward(_view_offset, 0.0, config.step_smoothing_speed * delta)
+	_smoothed_view_y = current_y + _view_offset
+	camera_rig.set_step_offset(_view_offset)
+
+
+# Cancel a discrete body rise in the eye, so the step is invisible on the frame it
+# happens and _process only has to walk the offset back to zero. Physics interpolation
+# cannot do this for us: _try_step_move writes global_position outright, and a teleport
+# is a new authoritative pose to the interpolator, not motion to blend.
+func _absorb_body_rise(previous_y: float) -> void:
+	var rise: float = global_position.y - previous_y
+	if absf(rise) < 0.001:
+		return
+	_view_offset = clampf(
+		_view_offset - rise, -config.step_height, config.step_height
+	)
+	_smoothed_view_y = global_position.y + _view_offset
+	if camera_rig:
+		camera_rig.set_step_offset(_view_offset)
+
+
+# Source skips stair smoothing while the view offset itself is animating, so a crouch
+# ease and the step chaser cannot fight over the same eye height.
+func _crouch_view_tween_active() -> bool:
+	return _crouch_tween != null and _crouch_tween.is_running()
 
 
 func _set_floor_type(_delta: float) -> void:

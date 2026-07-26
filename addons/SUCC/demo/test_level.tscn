@@ -55,9 +55,9 @@ unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 1, 24)
 
 [node name="Floor" type="CSGBox3D" parent="." unique_id=697389564]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, -4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, -1)
 use_collision = true
-size = Vector3(94, 0.5, 80)
+size = Vector3(94, 0.5, 86)
 material = SubResource("Mat_Gray")
 
 [node name="SpawnPad" type="CSGBox3D" parent="." unique_id=110000001]
@@ -367,6 +367,32 @@ size = Vector3(2.5, 0.4, 17)
 material = SubResource("Mat_Accent")
 
 [node name="UI" type="CanvasLayer" parent="." unique_id=1717347338]
+
+
+[node name="Barriers" type="Node3D" parent="." unique_id=190000000]
+[node name="BarrierNorth" type="CSGBox3D" parent="Barriers" unique_id=190000001]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 4, 42.5)
+use_collision = true
+visible = false
+size = Vector3(96, 8, 1)
+
+[node name="BarrierSouth" type="CSGBox3D" parent="Barriers" unique_id=190000002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 4, -44.5)
+use_collision = true
+visible = false
+size = Vector3(96, 8, 1)
+
+[node name="BarrierEast" type="CSGBox3D" parent="Barriers" unique_id=190000003]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 63.5, 4, -1)
+use_collision = true
+visible = false
+size = Vector3(1, 8, 88)
+
+[node name="BarrierWest" type="CSGBox3D" parent="Barriers" unique_id=190000004]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -31.5, 4, -1)
+use_collision = true
+visible = false
+size = Vector3(1, 8, 88)
 
 [node name="HUD" type="Control" parent="UI" unique_id=180000015]
 layout_mode = 3

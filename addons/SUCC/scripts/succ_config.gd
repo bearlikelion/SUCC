@@ -106,10 +106,11 @@ const SOURCE_MULT: float = 39.37
 ## Seconds to ease the eye down when crouching on the ground. Scaled by the
 ## distance left to travel, so an interrupted duck does not restart the easing.
 ## Air ducks are always instant, matching Source's FinishDuck.
-@export var crouch_time: float = 0.1
+@export var crouch_time: float = 0.4
 
-## Seconds to ease the eye back up when standing.
-@export var uncrouch_time: float = 0.1
+## Seconds to ease the eye back up when standing. Source unducks in half the time it
+## ducks (TIME_TO_UNDUCK 0.2 against TIME_TO_DUCK 0.4).
+@export var uncrouch_time: float = 0.2
 
 ## Length of the SpringArm3D when the camera is in third-person mode (m).
 @export var third_person_distance: float = 2.0
