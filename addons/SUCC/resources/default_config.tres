@@ -11,3 +11,5 @@ bob_up = 0.1
 bob_max = 0.0
 tilt_angle = 0.0
 tilt_speed = 0.5
+max_velocity = 127.000254
+enforce_max_velocity = false

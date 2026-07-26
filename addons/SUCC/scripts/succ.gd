@@ -35,6 +35,9 @@ const DEFAULT_INPUT_ACTIONS: Dictionary[String, String] = {
 const FLOOR_COL_MARGIN: float = 0.02
 # Fraction of the requested move below which the body counts as blocked.
 const BLOCKED_TRAVEL_FRACTION: float = 0.9
+# Below this the contact is a wall, not a ramp you could surf. Matches
+# SourceMover.MIN_RAMP_NORMAL_Y in SurfsUp v2.
+const MIN_RAMP_NORMAL_Y: float = 0.01
 
 
 @export var config: SUCCConfig
@@ -66,6 +69,8 @@ var wish_jump: bool = false
 var wish_crouch: bool = false
 var crouched: bool = false
 var was_on_floor: bool = false
+## Normal of the floor or ramp underfoot; Vector3.UP when airborne.
+var ground_normal: Vector3 = Vector3.UP
 
 var _action_available: Dictionary[String, bool] = {}
 var _crouch_tween: Tween
@@ -166,7 +171,12 @@ func _physics_process(delta: float) -> void:
 	_set_floor_type(delta)
 	_apply_gravity(delta)
 	_set_velocity(delta)
+	_clamp_velocity()
 	_move_body(delta)
+	# Re-categorise after moving, the way Quake and Source do. Reading it only at the
+	# top of the tick leaves floor_type a frame stale, so the landing frame still
+	# looks airborne: gravity gets skipped, then reapplied, and the body bounces.
+	_set_floor_type(delta)
 	_update_movement_state()
 
 
@@ -188,8 +198,32 @@ func _process(delta: float) -> void:
 	camera_rig.update_tilt(delta, velocity, config)
 
 
+# Source ClipVelocity (gamemovement.cpp): strip the component heading into each
+# contact plane so the body travels along the surface instead of pressing through it.
+# Without this a surf ramp keeps accumulating downward velocity and you slide off
+# rather than riding the face, and there is nothing left to convert into air time.
+func _clip_velocity_to_contacts() -> void:
+	for i: int in get_slide_collision_count():
+		var normal: Vector3 = get_slide_collision(i).get_normal()
+		var into: float = velocity.dot(normal)
+		if into < 0.0:
+			velocity -= normal * into
+
+
+# sv_maxvelocity: Source clamps each axis independently, not the magnitude.
+func _clamp_velocity() -> void:
+	if not config.enforce_max_velocity:
+		return
+	var limit: float = config.max_velocity
+	velocity.x = clampf(velocity.x, -limit, limit)
+	velocity.y = clampf(velocity.y, -limit, limit)
+	velocity.z = clampf(velocity.z, -limit, limit)
+
+
 func _apply_gravity(delta: float) -> void:
-	if floor_type == FloorType.NONE:
+	# Ramps are too steep to stand on, so gravity keeps pulling; that downhill pull
+	# is what makes a surf ramp slide instead of holding you in place.
+	if floor_type != FloorType.FLOOR:
 		velocity.y -= config.gravity * delta
 
 
@@ -201,6 +235,14 @@ func _set_velocity(delta: float) -> void:
 	elif crouched and not wish_crouch:
 		_uncrouch()
 	_land_air_crouch()
+
+	# Ramps are too steep to walk, so they take air acceleration like being airborne,
+	# but you can still jump off one. That transfer jump is the core of surf.
+	if floor_type == FloorType.RAMP:
+		if wish_jump:
+			_jump(delta)
+		_air_accelerate(delta, move_dir)
+		return
 
 	if floor_type == FloorType.NONE:
 		_air_accelerate(delta, move_dir)
@@ -250,8 +292,19 @@ func _air_accelerate(delta: float, wish_dir: Vector3) -> void:
 		return
 	wish_dir = wish_dir.normalized()
 
-	var h_velocity: Vector3 = Vector3(velocity.x, 0.0, velocity.z)
-	var speed_alignment: float = h_velocity.dot(wish_dir)
+	# On a ramp, strafing points straight into the face, and move_and_slide strips
+	# that whole component right back out, so speed never grows. Sliding the wish
+	# direction along the surface first is what lets a surf ramp build speed.
+	# The alignment then has to use full 3D velocity, because the ramp-aligned wish
+	# has a vertical component that a horizontal-only dot would ignore.
+	var on_ramp: bool = floor_type == FloorType.RAMP
+	if on_ramp:
+		var along: Vector3 = wish_dir.slide(ground_normal)
+		if along.length() > 0.001:
+			wish_dir = along.normalized()
+
+	var reference: Vector3 = velocity if on_ramp else Vector3(velocity.x, 0.0, velocity.z)
+	var speed_alignment: float = reference.dot(wish_dir)
 	var max_accel: float = config.max_air_speed - speed_alignment
 	if max_accel <= 0.0:
 		return
@@ -260,7 +313,9 @@ func _air_accelerate(delta: float, wish_dir: Vector3) -> void:
 
 
 func _jump(delta: float) -> void:
-	var floor_normal: Vector3 = get_floor_normal() if enable_surf else Vector3.UP
+	# ground_normal is tracked for ramps too, so a surf jump launches along the face
+	# rather than straight up. get_floor_normal() is zero on a ramp and cannot.
+	var floor_normal: Vector3 = ground_normal if enable_surf else Vector3.UP
 	if floor_normal == Vector3.ZERO:
 		floor_normal = Vector3.UP
 	var impulse: float = sqrt(2.0 * config.gravity * config.jump_height)
@@ -277,6 +332,7 @@ func _move_body(delta: float) -> void:
 	var grounded: bool = is_on_floor() or was_on_floor
 
 	move_and_slide()
+	_clip_velocity_to_contacts()
 
 	# Source WalkMove only reaches StepMove when the plain move was blocked
 	# (gamemovement.cpp:1986); stepping unconditionally lifts and drops the body
@@ -291,21 +347,23 @@ func _move_body(delta: float) -> void:
 	if blocked and grounded and floor_type != FloorType.NONE:
 		var flat_pos: Vector3 = global_position
 		var flat_vel: Vector3 = velocity
-		if _try_step_move(start_pos, start_vel):
-			var flat_dist: float = Vector2(
-				flat_pos.x - start_pos.x, flat_pos.z - start_pos.z
-			).length_squared()
-			var step_dist: float = Vector2(
-				global_position.x - start_pos.x, global_position.z - start_pos.z
-			).length_squared()
-			if flat_dist > step_dist:
-				global_position = flat_pos
-				velocity = flat_vel
-			else:
-				# Vertical velocity comes from the plain move; the step is a position fix.
-				velocity.y = flat_vel.y
-				if config.smooth_vertical_step:
-					_add_camera_step_offset(start_pos.y - global_position.y)
+		var stepped: bool = _try_step_move(start_pos, start_vel)
+		var flat_dist: float = Vector2(
+			flat_pos.x - start_pos.x, flat_pos.z - start_pos.z
+		).length_squared()
+		var step_dist: float = Vector2(
+			global_position.x - start_pos.x, global_position.z - start_pos.z
+		).length_squared()
+		# Falling back to the plain move means restoring its result, not the position
+		# from before it ran, or the frame's movement is thrown away.
+		if not stepped or flat_dist > step_dist:
+			global_position = flat_pos
+			velocity = flat_vel
+		else:
+			# Vertical velocity comes from the plain move; the step is a position fix.
+			velocity.y = flat_vel.y
+			if config.smooth_vertical_step:
+				_add_camera_step_offset(start_pos.y - global_position.y)
 
 	# Stair descent via floor_snap_length drops Y without a collision, so seed the
 	# camera offset from the drop itself.
@@ -324,6 +382,11 @@ func _move_body(delta: float) -> void:
 # velocity, so no momentum is synthesised and ramps cannot fling the body.
 # Returns false when the stepped attempt found no walkable ground.
 func _try_step_move(start_pos: Vector3, start_vel: Vector3) -> bool:
+	# Nothing to step onto if what blocked us is a slope rather than a lip. Bailing
+	# here keeps the body from lifting and dropping every frame at a ramp's foot.
+	if not _blocked_by_steppable_surface():
+		return false
+
 	global_position = start_pos
 	velocity = start_vel
 
@@ -344,7 +407,11 @@ func _try_step_move(start_pos: Vector3, start_vel: Vector3) -> bool:
 	var down_hit: KinematicCollision3D = move_and_collide(
 		Vector3.DOWN * (up_dist + FLOOR_COL_MARGIN), true
 	)
+	# Rejecting has to undo the lift as well. Leaving the body raised strands it in
+	# mid-air, and at the foot of a surf ramp that reads as an uncommanded bounce.
 	if down_hit == null or down_hit.get_normal().y < cos(max_floor_angle):
+		global_position = start_pos
+		velocity = start_vel
 		return false
 	global_position += down_hit.get_travel()
 	return true
@@ -352,6 +419,18 @@ func _try_step_move(start_pos: Vector3, start_vel: Vector3) -> bool:
 
 # Takes the largest single step rather than summing: climbing consecutive risers adds
 # faster than the offset decays, and accumulated lag reads as the camera sinking.
+# True when at least one contact from the last move is a near-vertical face, i.e. a
+# step or lip. A surf ramp blocks horizontally too, but stepping onto it is never
+# valid, so the whole attempt can be skipped.
+func _blocked_by_steppable_surface() -> bool:
+	for i: int in get_slide_collision_count():
+		var normal: Vector3 = get_slide_collision(i).get_normal()
+		# Walls and lips have a near-zero vertical component; slopes do not.
+		if absf(normal.y) < cos(max_floor_angle):
+			return true
+	return false
+
+
 func _add_camera_step_offset(amount: float) -> void:
 	var limit: float = config.step_height
 	if absf(amount) > absf(_camera_step_offset):
@@ -359,13 +438,28 @@ func _add_camera_step_offset(amount: float) -> void:
 
 
 func _set_floor_type(_delta: float) -> void:
-	if not is_on_floor():
+	if is_on_floor():
+		ground_normal = get_floor_normal()
+		# Anything the body can stand on but not hold is a ramp; keyed off
+		# ramp_angle_threshold so it can never disagree with floor_max_angle.
+		var angle: float = get_floor_angle()
+		floor_type = FloorType.RAMP if angle >= ramp_angle_threshold else FloorType.FLOOR
+		return
+
+	# Too steep to stand on is still a surface you can surf and jump off, so look for
+	# a ramp face among the contacts rather than calling it plain airborne.
+	# Mirrors SourceMover.classify_floor_normals in SurfsUp v2.
+	var best: Vector3 = Vector3.ZERO
+	for i: int in get_slide_collision_count():
+		var normal: Vector3 = get_slide_collision(i).get_normal()
+		if normal.y > MIN_RAMP_NORMAL_Y and normal.y > best.y:
+			best = normal
+	if best == Vector3.ZERO:
+		ground_normal = Vector3.UP
 		floor_type = FloorType.NONE
 		return
-	# Anything the body can stand on but not hold is a ramp; keyed off
-	# ramp_angle_threshold so it can never disagree with floor_max_angle.
-	var angle: float = get_floor_angle()
-	floor_type = FloorType.RAMP if angle >= ramp_angle_threshold else FloorType.FLOOR
+	ground_normal = best
+	floor_type = FloorType.RAMP
 
 
 func _crouch() -> void:

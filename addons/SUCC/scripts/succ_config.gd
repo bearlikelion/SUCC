@@ -58,6 +58,14 @@ const SOURCE_MULT: float = 39.37
 ## work: small deltas per frame that accumulate into large directional turns.
 @export var max_air_speed: float = 0.762
 
+## Hard ceiling on speed per axis in m/s, as sv_maxvelocity. Source ships 3500
+## units (88.9 m). Only applied when [member enforce_max_velocity] is true.
+@export var max_velocity: float = 88.9
+
+## When true, clamp each velocity axis to [member max_velocity]. Source enforces
+## this; surf and bhop modes usually leave it off so speed can climb freely.
+@export var enforce_max_velocity: bool = false
+
 
 @export_group("Speed Modifiers")
 

@@ -4,46 +4,45 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/bearlikelion/SUCC?include_prereleases&sort=semver)](https://github.com/bearlikelion/SUCC/releases)
 
-A first and third-person character controller for Godot 4 with Quake and Source engine movement: bunnyhopping, surfing, air strafing, stair stepping and crouch jumping. Written in statically typed GDScript.
+A Godot 4 character controller that can feel like Quake, Half-Life, Quake 2, Half-Life 2 or SurfsUp, by swapping one resource file.
 
-Based on the [Quake movement code](https://github.com/id-software/quake) and the physics and mouse-look feel of [Valve's Source SDK 2013](https://github.com/ValveSoftware/source-sdk-2013), the same lineage that powers bhop, surf, and every Source-engine mod you've ever loved.
+You get the movement those engines are known for: bunnyhopping, surfing, air strafing, stair stepping and crouch jumping. Written in statically typed GDScript, ported by reading the original engine source rather than guessing at it.
 
-This is the character controller from [**SurfsUp**](https://store.steampowered.com/app/3454830/SurfsUp/?utm_source=SUCC), now open-sourced for anyone to use, learn from, and build on.
+This is the controller from [**SurfsUp**](https://store.steampowered.com/app/3454830/SurfsUp/?utm_source=SUCC), open-sourced under the MIT License.
 
 **Documentation:** https://bearlikelion.github.io/SUCC/
 
 ![The demo gym](docs/images/gym-overview.png)
 
----
+## What you get
 
-## Why you might want it
+- **Five movement presets.** Pick an engine's feel by assigning a resource, or swap at runtime with one call.
+- **Tuning without code.** Gravity, speed, friction, jump height, hull size, eye height, head bob and view tilt are all properties on a resource you edit in the inspector.
+- **A test gym.** Six lanes covering stairs, slopes, bhop, crouch, surf and slide, with a speedometer reading both metres and engine units.
+- **Signals and hooks** for wiring up your own health, weapons and game states without editing the controller.
+- **Multiplayer support.** Authority checks throughout, plus a lightweight `SUCCPawn` for remote players. Works with ENet, WebSocket, GodotSteam or anything else.
+- **No autoloads or singletons.** Drop it in and it works.
 
-- **Movement that feels right.** Air acceleration, bhop, surf and Source-accurate stair stepping, ported by reading the original engine source rather than approximating it.
-- **Five movement presets.** Ship your game feeling like Half-Life, Quake, Quake 2, Half-Life 2 or SurfsUp by assigning a resource file. Swap at runtime with one call.
-- **Tuning without code.** Gravity, speed, friction, jump height, hull size, eye height, head bob and view tilt all live in a `SUCCConfig` resource you edit in the inspector.
-- **A test gym.** Six lanes covering stairs, slants, bhop, crouch, surf and slide, with a speedometer reading both metres and engine units.
-- **Built to be extended.** Signals and override hooks for your game's health, weapons and states, without editing the controller.
-- **Multiplayer-ready.** Authority checks throughout and a lightweight `SUCCPawn` for remote players. Transport-agnostic: ENet, WebSocket, GodotSteam, whatever you like.
-- **No singletons.** Drop it into any project.
+## The presets
 
-## Movement presets
-
-| Preset | Feels like |
+| File | Feels like |
 |---|---|
 | `default_config.tres` | SurfsUp: fast and slidey, 400 u/s |
 | `goldsrc.tres` | Half-Life and CS 1.6, 320 u/s |
-| `quake.tres` | Quake and QuakeWorld, shorter character, lower camera |
+| `quake.tres` | Quake and QuakeWorld, shorter body, lower camera |
 | `quake2.tres` | Quake 2: heavier, grippier, no air strafing |
 | `source.tres` | Half-Life 2: floaty jumps, 190 u/s until you sprint |
 
-The numbers came from reading the engine source, which turned up some surprises. Quake 2 runs at 300 u/s with friction 6, not 320 and 4. Half-Life 2 uses gravity 600 and a hardcoded jump impulse of 160, and walks at 190 rather than the 320 everyone quotes. See [How accurate are the presets?](https://bearlikelion.github.io/SUCC/explanation/engine-accuracy/) for the file and line numbers.
+The values came from the engine source, which turned up some surprises. Quake 2 runs at 300 u/s with friction 6, not the 320 and 4 everyone quotes. Half-Life 2 uses gravity 600, a hardcoded jump impulse of 160, and walks at 190. Each preset also carries its engine's own head bob and view tilt, so Quake bobs hard and Half-Life 2 has no strafe tilt at all.
 
-## Quickstart
+See [preset values](https://bearlikelion.github.io/SUCC/reference/presets/) for the full table, or [how accurate are the presets?](https://bearlikelion.github.io/SUCC/explanation/engine-accuracy/) for the file and line numbers behind each one.
 
-1. Copy `addons/SUCC/` into your project's `addons/` folder. Scripts register automatically via `class_name`, so there's no plugin to enable.
-2. Add these input actions to your Input Map: `forward`, `back`, `left`, `right`, `jump`, `duck`, `crouch`, `sprint`. Any you skip are reported with `push_warning()` and disabled individually; the rest of the controller keeps working.
-3. Instance or inherit `addons/SUCC/scenes/succ_character.tscn` as your player.
-4. Extend `SUCC` to add your own game state.
+## Getting started
+
+1. Copy `addons/SUCC/` into your project's `addons/` folder. Scripts register through `class_name`, so there's no plugin to enable.
+2. Add seven input actions: `forward`, `back`, `left`, `right`, `jump`, `crouch`, `sprint`. Any you skip get a warning and are disabled individually, so the rest still works.
+3. Drop `addons/SUCC/scenes/succ_character.tscn` into a scene with a floor, and press F6.
+4. To add your own game logic, make an inherited scene and extend `SUCC`.
 
 ```gdscript
 class_name MyPlayer
@@ -51,87 +50,58 @@ extends SUCC
 
 signal died
 
-enum MyState { ALIVE, DEAD }
-
 var health: int = 100
-var my_state: MyState = MyState.ALIVE
 
 
 func take_damage(amount: int) -> void:
 	health -= amount
 	if health > 0:
 		return
-	my_state = MyState.DEAD
 	set_game_state(GameState.DISABLED)
 	died.emit()
 
 
 func _can_move() -> bool:
-	return my_state == MyState.ALIVE
+	return health > 0
 ```
 
-To try a preset:
+To try a different engine's movement:
 
 ```gdscript
 config = load("res://addons/SUCC/resources/quake.tres") as SUCCConfig
 apply_config()
 ```
 
-Then walk the demo gym at `addons/SUCC/demo/test_level.tscn` and press **1** to **5** to feel the difference between engines on the same obstacle.
+Then open `addons/SUCC/demo/test_level.tscn` and press **1** to **5** while playing to feel the difference on the same obstacle.
 
-Full docs: **[https://bearlikelion.github.io/SUCC/](https://bearlikelion.github.io/SUCC/)**
+The [tutorial](https://bearlikelion.github.io/SUCC/tutorial/) walks through all of this properly in about ten minutes.
 
-## What's included
+## Where to go next
 
-```
-addons/SUCC/
-├── scripts/
-│   ├── succ.gd           # class_name SUCC extends CharacterBody3D
-│   ├── succ_pawn.gd      # class_name SUCCPawn, remote peer mirror
-│   ├── succ_camera.gd    # class_name SUCCCamera, SpringArm3D + mouse look
-│   └── succ_config.gd    # class_name SUCCConfig, physics/feel tuning Resource
-├── scenes/
-│   ├── succ_character.tscn
-│   └── succ_pawn.tscn
-├── resources/
-│   ├── default_config.tres   # SurfsUp
-│   ├── goldsrc.tres          # Half-Life
-│   ├── quake.tres            # Quake / QuakeWorld
-│   ├── quake2.tres           # Quake 2
-│   └── source.tres           # Half-Life 2
-└── demo/
-    ├── test_level.tscn   # six-lane gym: stairs, slants, bhop, crouch, surf, slide
-    ├── test_level.gd
-    └── demo.tres         # HUD theme
-```
+- [Use a movement preset](https://bearlikelion.github.io/SUCC/how-to/use-a-preset/)
+- [Extend SUCC for your game](https://bearlikelion.github.io/SUCC/how-to/extend-succ/)
+- [Tune your own movement](https://bearlikelion.github.io/SUCC/how-to/tune-movement/)
+- [Add multiplayer](https://bearlikelion.github.io/SUCC/how-to/add-multiplayer/)
+- [How the movement works](https://bearlikelion.github.io/SUCC/explanation/movement/), including why holding jump makes you faster
 
 ## What SUCC is not
 
-SUCC is **just the controller**. It does not provide health, ammo, scoring, checkpoints, UI, chat, VOIP, or leaderboards. Those live in your game code, extending `SUCC`.
+SUCC is only the controller. There's no health, ammo, scoring, checkpoints, UI, chat, VOIP or leaderboards. Those belong in your game code.
 
 Example games and game modes will be published in the separate [**SUCC Demos**](https://github.com/bearlikelion/SUCC-Demos) repository. That project is a work in progress; it will be open-sourced under the MIT License once it's ready, with attribution required.
 
 ## Games built with SUCC
 
-- **[SurfsUp](https://store.steampowered.com/app/3454830/SurfsUp/)** by **[Mark Arneman](https://bearlikelion.com/)** & **[Nerdiful](https://nerdiful.itch.io/)**, the surf/bhop game whose controller SUCC was extracted from.
+- **[SurfsUp](https://store.steampowered.com/app/3454830/SurfsUp/)** by **[Mark Arneman](https://bearlikelion.com/)** & **[Nerdiful](https://nerdiful.itch.io/)**, the surf and bhop game SUCC was extracted from.
 
-Shipped or working on something built with SUCC? [Open an issue](https://github.com/bearlikelion/SUCC/issues/new) with your game's name, a link, and the author(s), and it'll be added here.
+Built something with SUCC? [Open an issue](https://github.com/bearlikelion/SUCC/issues/new) with the name, a link and the authors, and it'll be added here.
 
-## Heritage & credits
+## Credits
 
-SUCC stands on the shoulders of:
-
-- **Quake**, id Software's [original movement code](https://github.com/id-software/quake) defined the shape of FPS player physics.
-- **Source SDK 2013**, Valve's [open-source engine release](https://github.com/ValveSoftware/source-sdk-2013) inspired the air acceleration, friction, and mouse-look math used here.
-- **[GoldGdt](https://github.com/ratmarrow/GoldGdt)** by **ratmarrow**, the Godot port that SUCC began as a fork of.
-- **[SurfsUp](https://store.steampowered.com/app/3454830/SurfsUp/)** v1 by **[Mark Arneman](https://bearlikelion.com/)**, rewrote GoldGdt to ship the Steam release.
-- **SurfsUp v2** by **[Nerdiful](https://nerdiful.itch.io/)**, refactored the controller for SurfsUp's 2.0 update.
-- **SUCC** by **[Mark Arneman](https://bearlikelion.com/)**, overhauled, extended with state and pawn systems, documented, and open-sourced for everyone.
+SUCC exists because of work that came before it: id Software's [Quake](https://github.com/id-software/quake) movement code, Valve's [Source SDK 2013](https://github.com/ValveSoftware/source-sdk-2013) release, and [GoldGdt](https://github.com/ratmarrow/GoldGdt) by ratmarrow, which SUCC started as a fork of. [Full acknowledgements](https://bearlikelion.github.io/SUCC/acknowledgements/).
 
 ## License
 
-SUCC is released under the **MIT License**, see [LICENSE](LICENSE). Use it freely in commercial or non-commercial projects, attribution appreciated but not required.
+MIT, see [LICENSE](LICENSE). Use it in commercial or non-commercial projects. Attribution appreciated but not required.
 
-## Contributing
-
-Issues, pull requests, and questions are welcome on [GitHub](https://github.com/bearlikelion/SUCC). See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Issues and pull requests welcome, see [CONTRIBUTING.md](CONTRIBUTING.md).
