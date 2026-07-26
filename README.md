@@ -14,6 +14,8 @@ reading the original engine source rather than guessing at it.
 
 This is the controller from [**SurfsUp**](https://store.steampowered.com/app/3454830/SurfsUp/?utm_source=SUCC), open-sourced under the MIT License.
 
+**Try it in your browser:** https://bearlikelion.com/succ
+
 **Documentation:** https://bearlikelion.github.io/SUCC/
 
 ![The demo gym](docs/images/gym-overview.png)
