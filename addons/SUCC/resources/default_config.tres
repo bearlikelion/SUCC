@@ -5,9 +5,9 @@
 [resource]
 script = ExtResource("1_succ_config")
 crouch_speed_modifier = 0.3333333
-bob_amount = 0.01
-bob_cycle = 0.8
-bob_up = 0.5
-bob_max = 0.1016
-tilt_angle = 2.0
-tilt_speed = 5.08001
+bob_amount = 0.0
+bob_cycle = 0.1
+bob_up = 0.1
+bob_max = 0.0
+tilt_angle = 0.0
+tilt_speed = 0.5

@@ -76,18 +76,20 @@ func update_bob(delta: float, horizontal_speed: float, grounded: bool,
 
 
 # Quake V_CalcRoll: tilt proportional to sideways velocity, capped at tilt_angle.
+# A positive rotation.z leans the view left in Godot, so strafing right (positive
+# sideways velocity) needs a negative angle to lean the view into the movement.
 func update_tilt(delta: float, velocity: Vector3, config: SUCCConfig) -> void:
 	if config.tilt_angle <= 0.0:
 		if not is_zero_approx(rotation.z):
 			rotation.z = move_toward(rotation.z, 0.0, deg_to_rad(60.0) * delta)
 		return
 	var side: float = velocity.dot(global_transform.basis.x)
-	var sign_: float = -1.0 if side < 0.0 else 1.0
+	var lean: float = 1.0 if side < 0.0 else -1.0
 	side = absf(side)
 	var value: float = config.tilt_angle
 	if side < config.tilt_speed:
 		value = side * value / config.tilt_speed
-	rotation.z = deg_to_rad(value * sign_)
+	rotation.z = deg_to_rad(value * lean)
 
 
 func _apply_offsets() -> void:
