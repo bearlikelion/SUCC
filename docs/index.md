@@ -6,30 +6,28 @@ crouch-jumping.
 
 Written in statically typed GDScript, based on the [Quake movement
 code](https://github.com/id-software/quake) and [Valve's Source SDK
-2013](https://github.com/ValveSoftware/source-sdk-2013) - the lineage behind bhop, surf,
-and every Source-engine mod you've loved.
+2013](https://github.com/ValveSoftware/source-sdk-2013).
 
 This is the controller from [**SurfsUp**](https://store.steampowered.com/app/3454830/SurfsUp/),
-open-sourced under the MIT License for anyone to use, learn from, and build on.
+open-sourced under the MIT License.
 
 ![The demo gym](images/gym-overview.png)
 
-## What you get
+## Features
 
-- **Movement that feels right.** Air acceleration, bunnyhopping, slope surfing and
-  Source-accurate stair stepping, ported by reading the original engine source rather than
-  approximating it.
+- **Quake-lineage movement.** Air acceleration, bunnyhopping, slope surfing and
+  Source-accurate stair stepping, ported from the original engine source.
 - **Smooth first- and third-person traversal.** The camera and player model glide up and
   down stairs at walking or sprint speed instead of following the body's discrete steps.
-- **Configurable crouch transitions.** Choose SurfsUp-style linear smoothing or an
-  immediate snap. Air crouches still raise the legs without moving the head.
-- **Five movement presets.** Ship your game feeling like Half-Life, Quake, Quake 2,
-  Half-Life 2 or SurfsUp by assigning a resource file. Swap at runtime with one call.
+- **Configurable crouch transitions.** Linear smoothing or an immediate snap. Air crouches
+  raise the legs without moving the head.
+- **Five movement presets.** Half-Life, Quake, Quake 2, Half-Life 2 or SurfsUp, assigned as
+  a resource file. Swap at runtime with one call.
 - **Tuning without code.** Gravity, speed, friction, jump height, hull size, eye height and
   crouch smoothing all live in a `SUCCConfig` resource you edit in the Inspector.
 - **A test gym.** A demo level that exercises every feature, with a speedometer reading
   both metres and engine units.
-- **Built to be extended.** Signals and override hooks for your game's health, weapons and
+- **Extension points.** Signals and override hooks for your game's health, weapons and
   states, without editing the controller.
 - **Multiplayer-ready.** Authority checks throughout and a lightweight `SUCCPawn` for
   remote players.
@@ -49,14 +47,14 @@ ready, with attribution required.
 
 **Manual**: download the latest [release zip](https://github.com/bearlikelion/SUCC/releases)
 and copy `addons/SUCC/` into your project's `addons/` folder. The scripts use `class_name`,
-so Godot registers them automatically - no Plugins toggle needed.
+so Godot registers them automatically. There is no Plugins toggle.
 
 Requires Godot 4.6 or newer.
 
 ## Where to start
 
-**New to SUCC?** Work through the [tutorial](tutorial.md). It gets a character walking and
-then has you feel the difference between five engines by pressing number keys.
+**New to SUCC?** Work through the [tutorial](tutorial.md). It gets a character walking, then
+compares the five engine presets.
 
 **Know what you want?**
 
@@ -68,7 +66,7 @@ then has you feel the difference between five engines by pressing number keys.
 **Want to understand it?**
 
 - [How the movement works](explanation/movement.md) - why holding jump makes you faster
-- [How accurate are the presets?](explanation/engine-accuracy.md) - the surprising numbers
+- [How accurate are the presets?](explanation/engine-accuracy.md) - where the values come from
 - [The demo gym](explanation/demo-level.md) - what each lane tests
 
 **Looking up a value?**

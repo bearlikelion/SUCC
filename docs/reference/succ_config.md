@@ -1,10 +1,10 @@
 # `class_name SUCCConfig extends Resource`
 
-All physics and feel tuning. Swap configs at runtime to change character weight, gravity, speed profile, etc. Exports are grouped in the inspector for easier navigation.
+All physics and feel tuning. Swap configs at runtime to change character weight, gravity, speed profile, etc. Exports are grouped in the inspector.
 
 Call [`SUCC.apply_config()`](succ.md) after replacing `config` at runtime so the collider, floor snap length and camera height are re-derived.
 
-Four engine-accurate presets ship with the addon - see [Preset values](presets.md).
+Five presets ship with the addon - see [Preset values](presets.md).
 
 ## Unit helpers
 
@@ -14,7 +14,7 @@ All the engines SUCC draws from use 1 unit = 1 inch. These static methods keep a
 |---|---|---|
 | `SOURCE_MULT` | `const float = 39.37` | Units per metre. |
 | `source_units` | `static func (value: float) -> float` | Engine units to metres. |
-| `quake_units` | `static func (value: float) -> float` | Alias for `source_units`; documents intent at the call site. |
+| `quake_units` | `static func (value: float) -> float` | Alias for `source_units`. |
 
 ```gdscript
 config.max_speed = SUCCConfig.source_units(320.0)   # 8.128 m/s

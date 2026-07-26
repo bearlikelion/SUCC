@@ -1,16 +1,14 @@
 # The demo gym
 
-`addons/SUCC/demo/test_level.tscn` is a test course, not a showcase. Every obstacle exists
-to answer a specific question about the controller, and everything is sized in engine
-units so the numbers mean something to anyone who has tuned a Source game.
+`addons/SUCC/demo/test_level.tscn` is a test course, not a showcase. Every obstacle
+answers a specific question about the controller, and everything is sized in engine units.
 
 Open it and press **F6**.
 
 ![The gym seen from above the spawn pad](../images/gym-overview.png)
 
 You spawn on the yellow pad at the near edge. Six lanes run away from you, one per
-movement feature, built from CSG boxes with no textures so nothing distracts from the
-shapes.
+movement feature, built from untextured CSG boxes.
 
 ## The HUD
 
@@ -18,13 +16,12 @@ shapes.
 
 - **Under the crosshair**, your horizontal speed twice over: engine units per second in
   large text, metres per second below it. Source and Quake players think in units; Godot
-  thinks in metres, and a test level should speak both.
+  thinks in metres.
 - **Third line**, the current movement state (`IDLE`, `WALKING`, `CROUCHING`, `JUMPING`,
   `FALLING`).
-- **Top right**, which preset is loaded and its headline values, so a screenshot is
-  self-documenting.
-- **Bottom**, the controls, read from your actual Input Map rather than hardcoded. Rebind
-  `jump` and the hint updates.
+- **Top right**, which preset is loaded and its headline values.
+- **Bottom**, the controls, read from your Input Map rather than hardcoded. Rebind `jump`
+  and the hint updates.
 
 ## Controls
 
@@ -46,14 +43,13 @@ shapes.
 
 Five steps of 12 units (0.305 m) each, rising to a landing at 1.77 m.
 
-Twelve units is two-thirds of the 18-unit step limit every one of these engines uses.
-That's deliberate: at 16 units the flight technically works but feels like wading, because
-you're brushing the limit on every step. Walking up here should be smooth and
-unremarkable. If it stutters, the
+Twelve units is two-thirds of the 18-unit step limit every one of these engines uses. At
+16 units the flight still works but feels like wading, because you're brushing the limit
+on every step. Walking up here should be smooth. If it stutters, the
 [step handling](movement.md#why-stairs-need-special-handling) is broken.
 
 To the right sits a lone **20-unit step (0.508 m)**, just above the limit. You cannot walk
-onto it. You can jump onto it. That's the boundary made visible.
+onto it, only jump onto it.
 
 ## Slants
 
@@ -64,7 +60,7 @@ all three are walkable, and your speed should be identical on all of them and on
 ground. A ramp that speeds you up or slows you down means the movement solver is
 synthesising velocity it shouldn't.
 
-44° is deliberately just below the limit, the last angle that still counts as floor.
+44° is just below the limit, the last angle that still counts as floor.
 
 ## Bunnyhop blocks
 
@@ -76,7 +72,7 @@ Hold **Space** and run. You do not need to time the presses; `bhop_buffered_jump
 the next jump for the landing frame.
 
 The widening is a difficulty ramp keyed to the presets. Jump reach depends on speed and
-airtime, and the five presets differ enormously:
+airtime, which differ across the five:
 
 | Preset | Reach | Clears |
 |---|---|---|
@@ -87,7 +83,7 @@ airtime, and the five presets differ enormously:
 | Source | 101u | the first three |
 
 So the early gaps work in every preset and the late ones need speed. Switch to preset 5
-and you will fall short on gap four, Half-Life 2's jump is about a third as high as the
+and you will fall short on gap four; Half-Life 2's jump is about a third as high as the
 others.
 
 ## Crouch corridor
@@ -96,13 +92,12 @@ others.
 
 A 12 m tunnel with **40 units (1.016 m)** of headroom.
 
-That number is chosen to sit between the two hull heights: a ducked character is 36 units
-and fits; a standing character is 72 units and does not. Walk in standing and you stop at
-the entrance. Hold **Ctrl** and you pass.
+That number sits between the two hull heights: a ducked character is 36 units and fits; a
+standing character is 72 units and does not. Walk in standing and you stop at the
+entrance. Hold **Ctrl** and you pass.
 
-Release Ctrl while still inside and you stay crouched, there's no room to stand, and SUCC
-retries every frame rather than giving up. Walk out the far end and you stand
-automatically.
+Release Ctrl while still inside and you stay crouched. There's no room to stand, and SUCC
+retries every frame. Walk out the far end and you stand automatically.
 
 ## Surf ramp
 
@@ -118,19 +113,18 @@ permanently airborne on them, which is exactly what
 left to the launch platform, drop onto either face, and hold a strafe key into the slope.
 
 The staircase is 22 steps of 16-unit risers with **40-unit (1.016 m) treads**. The tread
-depth matters as much as the riser height: the player hull is 32 units deep, so a tread
-much narrower than that leaves the body straddling two risers at once and the step-up
-logic thrashes. At 40 units there is 25% clearance and the climb is smooth.
+depth matters as much as the riser height: the player hull is 32 units deep, so a
+narrower tread leaves the body straddling two risers at once and the step-up logic
+thrashes. At 40 units there is 25% clearance and the climb is smooth.
 
-The peak shape is the one real surf maps use, and it matters. On a peak you ride the
-outer face with open floor beside you, so easing off the strafe key drops you off the
-side. That is the skill the mode is built around. A valley would funnel you into the
-bottom and hold you there, which teaches nothing.
+The peak shape is what real surf maps use. On a peak you ride the outer face with open
+floor beside you, so easing off the strafe key drops you off the side. A valley would
+funnel you into the bottom and hold you there.
 
-Size matters as much as shape. The Momentum guide warns that "people may find
-themselves sliding off the bottoms of small ramps", and an undersized ramp gives you
-no time to build speed before you reach the floor. At 400 u/s you cross a spec-width
-ramp in about 2.4 seconds, against under a second on a ramp a third of that size.
+Size matters as much as shape. The Momentum guide warns that "people may find themselves
+sliding off the bottoms of small ramps", and an undersized ramp gives you no time to
+build speed before you reach the floor. At 400 u/s you cross a spec-width ramp in about
+2.4 seconds, against under a second on a ramp a third of that size.
 
 ## Slide
 
@@ -138,12 +132,12 @@ ramp in about 2.4 seconds, against under a second on a ramp a third of that size
 
 A **40°** chute, 11 m long, reached by another 25° access ramp.
 
-40° is walkable but steep enough that you slide when you stop pushing, which is the middle
-ground the slants don't cover.
+40° is walkable but steep enough that you slide when you stop pushing, the middle ground
+the slants don't cover.
 
 ## Reading the level as a test
 
-Assign your own config to the player and walk the lanes. Rough expectations:
+Assign your own config to the player and walk the lanes. Expectations:
 
 - Flat, ramps and stairs should all report the **same** speed.
 - Stair rises should be uniform, with no camera jitter.
@@ -155,8 +149,8 @@ If your tuning breaks one of those, the lane tells you which part of the movemen
 ## Making your own
 
 The whole level is CSG boxes in one scene file with a small script
-(`addons/SUCC/demo/test_level.gd`) doing the HUD and preset switching. It's a reasonable
-starting point to copy and cut down for your own game's test map.
+(`addons/SUCC/demo/test_level.gd`) doing the HUD and preset switching. Copy and cut it
+down for your own game's test map.
 
 The dimensions come from engine units divided by 39.37. If you want a 24-unit step:
 

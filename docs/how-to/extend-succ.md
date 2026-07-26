@@ -1,7 +1,7 @@
 # Extend SUCC for your game
 
-SUCC handles movement and the camera. It deliberately knows nothing about health, ammo,
-teams, scoring or respawning. You add those by subclassing it.
+SUCC handles movement and the camera. It knows nothing about health, ammo, teams, scoring
+or respawning. You add those by subclassing it.
 
 ## Make your own player class
 
@@ -22,8 +22,8 @@ Inheriting rather than editing SUCC means addon updates never clobber your game 
 
 ## Stop movement without breaking the character
 
-Override `_can_move()` and `_can_look()`. Returning `false` freezes that behaviour while
-leaving everything else intact - gravity still applies, the camera still renders.
+Override `_can_move()` and `_can_look()`. Returning `false` freezes that behaviour and
+leaves the rest intact: gravity still applies, the camera still renders.
 
 ```gdscript
 func _can_move() -> bool:
@@ -44,8 +44,7 @@ set_game_state(GameState.ACTIVE)     # back to normal
 
 ## React to what the character does
 
-SUCC emits a signal whenever something notable happens. Connect them from the parent, or
-override the matching hook inside your subclass.
+Connect these from the parent, or override the matching hook inside your subclass.
 
 | Signal | Fires when |
 |---|---|
@@ -55,7 +54,7 @@ override the matching hook inside your subclass.
 | `game_state_changed(old, new)` | Active, frozen or disabled |
 | `camera_mode_changed(mode)` | First person or third person |
 
-Landing damage is a good example, because `fall_velocity` is handed to you:
+Landing damage, using the `fall_velocity` the signal passes:
 
 ```gdscript
 func _ready() -> void:
@@ -91,8 +90,8 @@ func _on_movement_state_changed(_old: MovementState, new_state: MovementState) -
 ## Report events upward, don't reach upward
 
 Emit a signal and let whoever spawned the player decide what it means. A player that
-calls `get_parent().on_player_died()` breaks the moment you move it in the tree or test
-the scene on its own.
+calls `get_parent().on_player_died()` breaks when you move it in the tree or test the
+scene on its own.
 
 ```gdscript
 class_name FPSPlayer
@@ -130,16 +129,15 @@ func _ready() -> void:
 
 A "class" or "character" in your game is usually a subclass plus a config, not new
 movement code. A `HeavyGunner` with `heavy.tres` and a `Scout` with `light.tres` share
-every line of movement logic and still feel completely different.
+every line of movement logic and still feel different.
 
-The five shipped presets work the same way - they are configs, not subclasses.
+The five shipped presets work the same way: they are configs, not subclasses.
 
 ## What not to override
 
 `_physics_process`, `_move_body` and the acceleration functions are the movement solver.
-If you override them you lose the stair stepping, ramp handling and air control that
-make SUCC feel like Quake. Change `SUCCConfig` values instead; almost every feel
-question is answerable there.
+Overriding them loses the stair stepping, ramp handling and air control. Change
+`SUCCConfig` values instead; most feel questions are answerable there.
 
 If you do need to extend `_physics_process`, call `super(delta)` first:
 

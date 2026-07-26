@@ -1,8 +1,8 @@
 # How accurate are the presets?
 
 The four engine presets were built by reading the original engine source, not by copying
-numbers from wikis. Several of the values that came out surprised us, and they look like
-mistakes until you see where they come from. This page is the receipts.
+numbers from wikis. Some of the values look like mistakes until you see where they come
+from.
 
 Every citation below is a file and line in the published source for that engine.
 
@@ -16,13 +16,13 @@ Three values differ from what almost every reference says:
 | Friction | 4 | **6** (`qcommon/pmove.c:59`) |
 | Ducked view height | 4 | **-2** (`qcommon/pmove.c:1020`) |
 
-The ducked view height is a mix-up worth naming: `4` is the ducked hull's *top*
-(`maxs[2]`, line 1019). The eye height on the next line is `-2`.
+The ducked view height is a mix-up: `4` is the ducked hull's *top* (`maxs[2]`, line 1019).
+The eye height on the next line is `-2`.
 
-The friction difference is the one you feel. Quake 2 at 6 is visibly stickier than Quake
-or Half-Life at 4.
+The friction difference is the one you feel. Quake 2 at 6 is stickier than Quake or
+Half-Life at 4.
 
-### Quake 2 cannot air-strafe, and it's deliberate
+### Quake 2 cannot air-strafe, by design
 
 `pm_airaccelerate` defaults to `0` (`qcommon/pmove.c:57`), and the server forces it to
 `0` outside deathmatch regardless of the cvar (`server/sv_init.c:197-205`). Single-player
@@ -40,9 +40,9 @@ else
 ```
 
 The difference between those two functions is a single line: `PM_AirAccelerate` clamps the
-target to 30 units, `PM_Accelerate` does not. That clamp is exactly what makes
-strafe-jumping possible ([why](movement.md#why-holding-jump-makes-you-faster)), so
-without it you get weak air steering that dies once you're at full speed.
+target to 30 units, `PM_Accelerate` does not. That clamp is what makes strafe-jumping
+possible ([why](movement.md#why-holding-jump-makes-you-faster)), so without it you get
+weak air steering that dies once you're at full speed.
 
 SUCC's air acceleration returns early once its cap is reached, so setting
 `air_acceleration = 0.0` would give *zero* air control, stricter than the real game. The
@@ -51,7 +51,7 @@ preset therefore uses `air_acceleration = 1.0` with the air cap raised to full
 
 ## Half-Life 2 walks at 190, not 320
 
-`sv_maxspeed` is 320 in Source, and that's the number everyone cites. It's only a ceiling.
+`sv_maxspeed` is 320 in Source, and that's the number usually cited. It's only a ceiling.
 
 `CHL2_Player::SetupMove` picks the real speed from one of three cvars
 (`game/server/hl2/hl2_player.cpp:86-88`):
@@ -64,13 +64,12 @@ then `CheckParameters` takes the smaller of that and `sv_maxspeed`
 (`game/shared/gamemovement.cpp:996-999`). So ordinary HL2 walking is 190 units per
 second, and 320 is what you get holding sprint.
 
-Two more HL2 surprises:
+Two more HL2 values worth noting:
 
 - **Gravity is 600, not 800** (`game/shared/movevars_shared.cpp:19-20`). This is why HL2
   feels floaty.
 - **The jump impulse is a hardcoded `160.0`** (`game/shared/gamemovement.cpp:2435`), not
-  the `sqrt(2 * gravity * 21)` the surrounding code implies, that would be 158.745. The
-  160 is a deliberate rounding up.
+  the `sqrt(2 * gravity * 21)` the surrounding code implies, which would be 158.745.
 
 `source.tres` encodes all three: `max_speed` 190 units, `sprint_speed_modifier` 1.6842 so
 sprint lands exactly on 320, gravity 600, jump 160. The 150-unit slow walk has no SUCC
@@ -91,7 +90,7 @@ Quake 2 has the same bug (`qcommon/pmove.c:655`). Source is the only one of the 
 genuinely uses its own air acceleration cvar. `quake.tres` therefore uses 10, the ground
 value, because that's what the engine really applies.
 
-Also worth correcting a common claim: NetQuake **does** have the 30-unit air clamp
+Contrary to a common claim, NetQuake **does** have the 30-unit air clamp
 (`WinQuake/sv_user.c:207-226`). Strafe-jumping is not a QuakeWorld addition. The only
 difference is the unused cvar.
 
@@ -102,8 +101,8 @@ The Half-Life engine is closed source. Only two movement values are set by the g
 
 `sv_maxspeed`, `sv_accelerate`, `sv_airaccelerate`, `sv_friction` and `sv_stopspeed` are
 read through `pmove->movevars->*` and have no default anywhere in the published SDK. The
-320 / 10 / 10 / 4 / 100 in `goldsrc.tres` are the well-known engine defaults, and we're
-labelling them as such rather than pretending they came from this source tree.
+320 / 10 / 10 / 4 / 100 in `goldsrc.tres` are the well-known engine defaults, not values
+from this source tree.
 
 Two GoldSrc specifics `goldsrc.tres` does **not** model:
 
@@ -120,9 +119,9 @@ outright: `halflife/dlls/world.cpp:482` comments gravity 800 as "67ft/sec", and
 `source-sdk-2013/src/game/shared/shareddefs.h:409-410` writes a fall speed as
 `sqrt(2 * gravity * 60 * 12)`, the `* 12` being twelve inches to the foot.
 
-SUCC uses 39.37 units per metre, which is Source's own approximation. The exact value
-would be 39.3701; the difference is 0.03% and Valve's number is the one the original
-cvars were tuned against.
+SUCC uses 39.37 units per metre, Source's own approximation. The exact value is 39.3701;
+the difference is 0.03%, and Valve's number is what the original cvars were tuned
+against.
 
 ## The origin sits in a different place
 

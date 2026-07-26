@@ -56,9 +56,9 @@ On your subclass pawn scene:
 
 ## Driving the pawn from the authority
 
-The authority is responsible for pushing its state onto the matching remote pawn. Most games keep the authority SUCC and the remote SUCCPawn in separate scene trees (the authority sees *only* its own SUCC; remotes see *only* pawns for others). The authority RPCs its state to peers; the synchronizer handles the actual transport.
+The authority pushes its state onto the matching remote pawn. Most games keep the authority SUCC and the remote SUCCPawn in separate scene trees (the authority sees *only* its own SUCC; remotes see *only* pawns for others). The authority RPCs its state to peers; the synchronizer handles the transport.
 
-A simple pattern: give each player a paired `(SUCC, SUCCPawn)` - authority updates its pawn's `synced_*` fields every physics tick, and the synchronizer replicates them to non-authority peers.
+Give each player a paired `(SUCC, SUCCPawn)`: the authority updates its pawn's `synced_*` fields every physics tick, and the synchronizer replicates them to non-authority peers.
 
 ```gdscript
 class_name NetworkedPlayer
@@ -80,7 +80,7 @@ func _physics_process(delta: float) -> void:
 	pawn.synced_crouched = crouched
 ```
 
-`super(delta)` matters - skip it and the base controller never runs. Note that `synced_movement_state` and `synced_game_state` are plain `int` on `SUCCPawn` rather than the `MovementState`/`GameState` enums, because replicated properties are transported as primitives.
+Skip `super(delta)` and the base controller never runs. `synced_movement_state` and `synced_game_state` are plain `int` on `SUCCPawn` rather than the `MovementState`/`GameState` enums, because replicated properties are transported as primitives.
 
 ## Integrations
 

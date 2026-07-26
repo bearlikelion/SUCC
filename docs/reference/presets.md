@@ -54,13 +54,13 @@ that to 320, which is `hl2_sprintspeed`. HL2's 150-unit slow walk has no equival
 **Head bob and tilt.** `bob_amount` is `cl_bob`, `bob_cycle` is `cl_bobcycle` and
 `tilt_angle` is `cl_rollangle` (or `sv_rollangle` in Quake 2 and Source). Source ships
 `sv_rollangle` at 0, so Half-Life 2 has no strafe tilt; the other three use 2 degrees.
-Quake bobs hardest at 0.02 on the shortest cycle, and Source is nearly imperceptible at
-0.002. Bob and tilt are first-person only.
+Quake bobs hardest at 0.02 on the shortest cycle; Source is barely visible at 0.002. Bob
+and tilt are first-person only.
 
 **`default_config` stop speed.** 157 units is SurfsUp's own tuning, not an engine value;
 the four engine presets all use 100.
 
-For the reasoning behind the surprising values, see
+For where these values come from, see
 [How accurate are the presets?](../explanation/engine-accuracy.md).
 
 ## Metric equivalents

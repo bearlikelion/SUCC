@@ -1,6 +1,6 @@
 # Contributing to SUCC
 
-Thanks for your interest. SUCC aims to be a small, focused character controller, so contributions that keep it that way are especially welcome.
+SUCC aims to be a small, focused character controller. Contributions that keep it that way are welcome.
 
 ## What belongs in SUCC
 
@@ -33,7 +33,7 @@ Open `/` (the repo root) in Godot 4.6+. The demo scene is the project's main sce
 1. Fork & branch from `main`.
 2. Keep PRs focused - one concern per PR.
 3. Include a CHANGELOG entry under `## [Unreleased]` describing user-visible changes.
-4. If you add or change an exported property, update the docs in `docs/api/`.
+4. If you add or change an exported property, update the docs in `docs/reference/`.
 
 ## Licensing
 

@@ -1,7 +1,6 @@
 # Tune your own movement
 
-Every number that decides how your character feels lives in a `SUCCConfig` resource. No
-code required.
+Every number that decides how your character feels lives in a `SUCCConfig` resource.
 
 ## Start from a copy
 
@@ -11,14 +10,14 @@ code required.
 
 Duplicate rather than edit in place, so addon updates don't overwrite your tuning.
 
-## What each knob actually does
+## What each value does
 
-The values are grouped in the Inspector. These are the ones worth reaching for first.
+The values are grouped in the Inspector. These are the ones to reach for first.
 
 ### Making it faster or slower
 
-- **`max_speed`**, top speed on the ground, in metres per second. The single biggest
-  lever on feel.
+- **`max_speed`**, top speed on the ground, in metres per second. The biggest lever on
+  feel.
 - **`acceleration`**, how quickly you reach that top speed. Higher is snappier. Source
   uses 10.
 - **`friction`**, how quickly you stop when you let go. Higher is grippier. Quake and
@@ -36,13 +35,11 @@ The values are grouped in the Inspector. These are the ones worth reaching for f
 
 These two decide whether your game can bhop and surf at all:
 
-- **`air_acceleration`**, how strongly you can steer mid-air. Around 100 gives classic
-  Quake and Source air control. Set it near 1 and you get Quake 2's near-total lack of
-  air steering.
+- **`air_acceleration`**, how strongly you can steer mid-air. Around 100 gives Quake and
+  Source air control. Set it near 1 for Quake 2's near-total lack of air steering.
 - **`max_air_speed`**, the per-frame cap on air acceleration, 0.762 m (30 units) in
   every Valve and id engine. **This small number is what makes bunnyhopping work.**
-  Raising it does not make you faster; it makes air control feel mushy. Leave it alone
-  unless you know what you're changing.
+  Raising it does not make you faster; it makes air control feel mushy.
 
 [How the movement works](../explanation/movement.md) explains why.
 
@@ -78,8 +75,8 @@ These two decide whether your game can bhop and surf at all:
 These are cosmetic, first-person only, and every engine ships different values.
 
 - **`bob_amount`**, how far the view bobs per unit of speed, the same idea as `cl_bob`.
-  Quake uses 0.02 and is unmistakable; Source uses 0.002 and you can barely tell.
-  Set it to 0 to switch bob off.
+  Quake uses 0.02 and is pronounced; Source uses 0.002 and is barely visible. Set it to
+  0 to switch bob off.
 - **`bob_cycle`**, seconds for one full bob. Quake 0.6, everything else 0.8.
 - **`bob_up`**, how much of the cycle is spent moving up. Every engine ships 0.5.
 - **`bob_max`**, a ceiling in metres so sprinting doesn't swing the view wildly.
@@ -99,13 +96,13 @@ config.max_speed = SUCCConfig.source_units(320.0)   # 8.128 m/s
 config.gravity = SUCCConfig.quake_units(800.0)      # 20.32 m/s²
 ```
 
-`quake_units()` is the same maths as `source_units()`; it exists so a Quake preset reads
-as Quake. Both divide by `SUCCConfig.SOURCE_MULT` (39.37 units per metre).
+`quake_units()` is the same maths as `source_units()`, named so a Quake preset reads as
+Quake. Both divide by `SUCCConfig.SOURCE_MULT` (39.37 units per metre).
 
 ## Two recipes
 
-**A heavy, ponderous character**, duplicate any preset and set `gravity` to about
-double, `max_speed` down, `jump_height` down:
+**A heavy character**, duplicate any preset and set `gravity` to about double,
+`max_speed` down, `jump_height` down:
 
 ```
 gravity = 40.0
@@ -135,8 +132,8 @@ func enter_low_gravity() -> void:
 
 Open `addons/SUCC/demo/test_level.tscn`, assign your config to the player, and run it.
 The stairs, ramps, bhop blocks and surf ramp are all sized in engine units, so the
-demo tells you quickly whether a change broke something. The speed readout under the
-crosshair shows both m/s and engine units.
+demo shows whether a change broke something. The speed readout under the crosshair
+shows both m/s and engine units.
 
 See [The demo gym](../explanation/demo-level.md) for what each lane tests and the exact
 dimensions.

@@ -1,10 +1,10 @@
 # Acknowledgements
 
-SUCC exists because of decades of open-source FPS movement lineage and the work of several people who deserve direct credit.
+SUCC builds on decades of open-source FPS movement lineage.
 
 ## Direct lineage
 
-**[Quake](https://github.com/id-software/quake)** - id Software released the Quake source code under GPL in 1999. The movement code in `sv_user.c` / `sv_move.c` defines the shape of FPS player physics: friction, ground/air acceleration, air strafing, bunnyhopping. Every controller that feels good at high speed traces back here.
+**[Quake](https://github.com/id-software/quake)** - id Software released the Quake source code under GPL in 1999. The movement code in `sv_user.c` / `sv_move.c` defines the shape of FPS player physics: friction, ground/air acceleration, air strafing, bunnyhopping.
 
 **[Source SDK 2013](https://github.com/ValveSoftware/source-sdk-2013)** - Valve's open release of the Source engine's game code. SUCC's friction, air-accel, and mouse-look math derive directly from `game/shared/gamemovement.cpp`. The 0.022° mouse-unit and `sv_friction` / `sv_accelerate` defaults come from here.
 
@@ -22,4 +22,4 @@ SUCC exists because of decades of open-source FPS movement lineage and the work 
 
 ## License & attribution
 
-SUCC is MIT-licensed. Attribution is appreciated but not required. If you ship a game using SUCC, a mention in your credits would make the author smile.
+SUCC is MIT-licensed. Attribution is appreciated but not required.
