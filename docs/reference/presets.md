@@ -25,7 +25,9 @@ how the source engines specify them. The `.tres` files store metres.
 | `crouch_view_offset` | 31 | 30 | 46 | 22 | 28 |
 | `crouch_speed_modifier` | 0.333 | 0.333 | 1.0 | 0.333 | 0.333 |
 | `sprint_speed_modifier` | 1.6 | 1.0 | 1.0 | 1.0 | 1.6842 |
-| `crouch_time` | 0.1 s | 0.4 s | 0.0 s | 0.0 s | 0.4 s |
+| `crouch_transition_mode` | Smooth | Smooth | Snap | Snap | Smooth |
+| `crouch_smoothing_speed` | 7.5 m/s | 2.159 m/s | — | — | 2.286 m/s |
+| `uncrouch_smoothing_speed` | 7.5 m/s | 4.318 m/s | — | — | 4.572 m/s |
 | `bob_amount` | 0.01 | 0.01 | 0.02 | 0.005 | 0.002 |
 | `bob_cycle` | 0.8 s | 0.8 s | 0.6 s | 0.8 s | 0.8 s |
 | `tilt_angle` | 2.0° | 2.0° | 2.0° | 2.0° | 0° |

@@ -67,10 +67,12 @@ config.max_speed = SUCCConfig.source_units(320.0)   # 8.128 m/s
 |---|---|---|---|
 | `standing_view_offset` | `float` | `1.711` | Eye height standing. |
 | `crouch_view_offset` | `float` | `0.796` | Eye height crouched. |
-| `crouch_time` | `float` | `0.12` | Crouch camera tween duration. |
+| `crouch_transition_mode` | `CrouchTransitionMode` | `SMOOTH` | Smooth or snap the grounded crouch camera. |
+| `crouch_smoothing_speed` | `float` | `7.5` | Camera speed in m/s while crouching. |
+| `uncrouch_smoothing_speed` | `float` | `7.5` | Camera speed in m/s while standing up. |
 | `third_person_distance` | `float` | `2.0` | Spring arm length in 3rd person. |
 | `smooth_vertical_step` | `bool` | `true` | Lerp the camera after step-up/down snaps. |
-| `step_smoothing_speed` | `float` | `15.0` | Catch-up speed for the step lerp. |
+| `step_smoothing_speed` | `float` | `3.81` | Fallback stair catch-up speed in m/s. |
 
 ## Mouse
 

@@ -8,6 +8,12 @@ extends Resource
 const SOURCE_MULT: float = 39.37
 
 
+enum CrouchTransitionMode {
+	SMOOTH,
+	SNAP,
+}
+
+
 @export_group("Gravity & Jump")
 
 ## Downward acceleration applied to the character in m/s^2.
@@ -103,14 +109,15 @@ const SOURCE_MULT: float = 39.37
 ## Eye height above the character origin while crouched (m).
 @export var crouch_view_offset: float = 0.796
 
-## Seconds to ease the eye down when crouching on the ground. Scaled by the
-## distance left to travel, so an interrupted duck does not restart the easing.
-## Air ducks are always instant, matching Source's FinishDuck.
-@export var crouch_time: float = 0.4
+## Whether grounded crouch camera transitions are smoothed or immediate.
+@export var crouch_transition_mode: CrouchTransitionMode = \
+		CrouchTransitionMode.SMOOTH
 
-## Seconds to ease the eye back up when standing. Source unducks in half the time it
-## ducks (TIME_TO_UNDUCK 0.2 against TIME_TO_DUCK 0.4).
-@export var uncrouch_time: float = 0.2
+## Camera speed while entering a smooth crouch. SurfsUp v2 uses 7.5 m/s.
+@export_range(0.1, 30.0, 0.1) var crouch_smoothing_speed: float = 7.5
+
+## Camera speed while leaving a smooth crouch. SurfsUp v2 uses 7.5 m/s.
+@export_range(0.1, 30.0, 0.1) var uncrouch_smoothing_speed: float = 7.5
 
 ## Length of the SpringArm3D when the camera is in third-person mode (m).
 @export var third_person_distance: float = 2.0
@@ -120,9 +127,8 @@ const SOURCE_MULT: float = 39.37
 ## traversal feels smooth instead of teleporty. Disable for a rigid feel.
 @export var smooth_vertical_step: bool = true
 
-## Rate in m/s at which the camera closes the vertical gap after a step.
-## Source uses a constant 150 units/s (3.81 m/s) in SmoothViewOnStairs.
-## Only applies when [member smooth_vertical_step] is true.
+## Fallback camera smoothing rate when horizontal traversal speed is near zero.
+## Moving stair traversal derives its rate from speed and the latest step rise.
 @export_range(0.5, 20.0) var step_smoothing_speed: float = 3.81
 
 

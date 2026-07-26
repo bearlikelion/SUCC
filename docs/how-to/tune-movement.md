@@ -56,8 +56,12 @@ These two decide whether your game can bhop and surf at all:
 
 ### Crouch timing
 
-- **`crouch_time`** / **`uncrouch_time`**, seconds to ease the camera down and back up
-  while on the ground. Air crouches are always instant, matching Source.
+- **`crouch_transition_mode`**, whether grounded crouches move the camera smoothly or
+  snap immediately.
+- **`crouch_smoothing_speed`** / **`uncrouch_smoothing_speed`**, linear camera speed
+  in metres per second. SurfsUp v2 uses 7.5 in both directions.
+- Air crouches are always instant so the legs tuck upward without snapping the head,
+  matching Source.
 
 ### Head bob and view tilt
 

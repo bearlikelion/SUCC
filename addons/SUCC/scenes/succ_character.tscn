@@ -26,6 +26,7 @@ distance_fade_max_distance = 1.25
 [node name="SUCCCharacter" type="CharacterBody3D" unique_id=759156532]
 script = ExtResource("1_succ")
 config = ExtResource("3_cfg")
+visual_root_path = NodePath("CSGMesh3D")
 input_actions = {
 "back": "back",
 "crouch": "crouch",

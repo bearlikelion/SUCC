@@ -33,6 +33,9 @@ const DEFAULT_INPUT_ACTIONS: Dictionary[String, String] = {
 	"sprint": "sprint",
 }
 const FLOOR_COL_MARGIN: float = 0.02
+const STEP_NORMAL_EPSILON: float = 0.001
+const MIN_FLAT_STEP_NORMAL_Y: float = 0.99
+const STEP_RAY_AHEAD: float = 0.1
 # Below this the contact is a wall, not a ramp you could surf. Matches
 # SourceMover.MIN_RAMP_NORMAL_Y in SurfsUp v2.
 const MIN_RAMP_NORMAL_Y: float = 0.01
@@ -46,6 +49,9 @@ const MIN_RAMP_NORMAL_Y: float = 0.01
 # Turn off for engine-authentic jumps, which are always straight up.
 @export var enable_surf: bool = true
 @export var default_camera_mode: CameraMode = CameraMode.FIRST_PERSON
+# Optional third-person model pivot. Keep collision outside this node: it receives a
+# render-only vertical offset while the authoritative body steps immediately.
+@export_node_path("Node3D") var visual_root_path: NodePath
 
 ## Slope angle at or above which a walkable floor counts as a ramp.
 @export_range(0.0, 89.0, 0.5, "radians_as_degrees") var ramp_angle_threshold: float = \
@@ -80,11 +86,18 @@ var _air_crouch_raise: float = 0.0
 var _smoothed_view_y: float = 0.0
 # Applied eye offset, rate-limited so a one-tick step cannot jolt the view.
 var _view_offset: float = 0.0
+var _previous_view_offset: float = 0.0
+var _visual_step_offset: float = 0.0
+var _previous_visual_step_offset: float = 0.0
+var _applied_visual_step_offset: float = 0.0
+var _step_smoothing_grade: float = 0.0
+var _skip_step_probe_once: bool = false
 var _clearance_shape: BoxShape3D = BoxShape3D.new()
 var _clearance_params: PhysicsShapeQueryParameters3D = PhysicsShapeQueryParameters3D.new()
 
 @onready var collision: CollisionShape3D = get_node_or_null("Collision")
 @onready var camera_rig: SUCCCamera = get_node_or_null("CameraRig")
+@onready var visual_root: Node3D = get_node_or_null(visual_root_path)
 
 
 func _ready() -> void:
@@ -99,6 +112,10 @@ func _ready() -> void:
 	floor_block_on_wall = false
 	camera_mode = default_camera_mode
 	apply_config()
+	if camera_rig:
+		camera_rig.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	if visual_root:
+		visual_root.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
@@ -116,6 +133,12 @@ func apply_config() -> void:
 	floor_snap_length = config.step_height + FLOOR_COL_MARGIN
 	_smoothed_view_y = global_position.y
 	_view_offset = 0.0
+	_previous_view_offset = 0.0
+	_visual_step_offset = 0.0
+	_previous_visual_step_offset = 0.0
+	_step_smoothing_grade = config.step_height / _step_run_estimate()
+	_skip_step_probe_once = false
+	_set_visual_step_offset(0.0)
 	if camera_rig:
 		camera_rig.set_step_offset(0.0)
 		camera_rig.view_height = config.standing_view_offset
@@ -168,6 +191,8 @@ func _physics_process(delta: float) -> void:
 		move_and_slide()
 		return
 
+	_previous_view_offset = _view_offset
+	_previous_visual_step_offset = _visual_step_offset
 	_gather_movement_input()
 	_set_floor_type(delta)
 	_apply_gravity(delta)
@@ -183,13 +208,13 @@ func _physics_process(delta: float) -> void:
 	# survived the landing to drop the eye 0.58 m a few frames later.
 	_land_air_crouch()
 	_update_movement_state()
+	_smooth_view_on_stairs(delta)
 
 
 func _process(delta: float) -> void:
+	_apply_render_step_offsets()
 	if camera_rig == null:
 		return
-	_smooth_view_on_stairs(delta)
-
 	if camera_mode != CameraMode.FIRST_PERSON:
 		return
 	var horizontal_speed: float = Vector2(velocity.x, velocity.z).length()
@@ -311,15 +336,28 @@ func _air_accelerate(delta: float, wish_dir: Vector3) -> void:
 
 
 func _jump(delta: float) -> void:
-	# ground_normal is tracked for ramps too, so a surf jump launches along the face
-	# rather than straight up. get_floor_normal() is zero on a ramp and cannot.
-	var floor_normal: Vector3 = ground_normal if enable_surf else Vector3.UP
-	if floor_normal == Vector3.ZERO:
-		floor_normal = Vector3.UP
 	var impulse: float = sqrt(2.0 * config.gravity * config.jump_height)
-	velocity += floor_normal * impulse * config.surf_jump_retention
+	if floor_type == FloorType.RAMP and enable_surf:
+		velocity += ground_normal * impulse * config.surf_jump_retention
+	else:
+		velocity.y = impulse
 	velocity.y -= config.gravity * delta * 0.5
+	if floor_type == FloorType.FLOOR:
+		_separate_jump_from_floor()
 	jumped.emit()
+
+
+func _separate_jump_from_floor() -> void:
+	var into_floor: float = velocity.dot(ground_normal)
+	var horizontal_normal: Vector3 = Vector3(
+		ground_normal.x,
+		0.0,
+		ground_normal.z
+	)
+	var horizontal_length_squared: float = horizontal_normal.length_squared()
+	if into_floor >= 0.0 or horizontal_length_squared < 0.000001:
+		return
+	velocity -= horizontal_normal * into_floor / horizontal_length_squared
 
 
 func _move_body(delta: float) -> void:
@@ -328,108 +366,199 @@ func _move_body(delta: float) -> void:
 	var start_vel: Vector3 = velocity
 	var grounded: bool = is_on_floor() or was_on_floor
 
-	# Source WalkMove traces flat to the destination BEFORE moving and steps whenever
-	# that trace hit anything (gamemovement.cpp:1986, `pm.fraction == 1` returns
-	# early). Deciding after the move cannot work at grazing angles: approaching a
-	# step at 85 degrees still covers 99% of the requested distance, and the hull
-	# only brushes the riser so no wall contact is reported either.
-	var flat_step: Vector3 = Vector3(start_vel.x, 0.0, start_vel.z) * delta
-	var blocked: bool = flat_step.length() > 0.001 and test_move(global_transform, flat_step)
+	# Climb before sliding. Sliding first means the hull hits the riser, and that contact
+	# clips velocity along a near-vertical plane: a quarter of the speed gone at 15
+	# degrees off-normal, all of it head-on. Probing down onto the step from above never
+	# touches the riser, so there is no contact to clip and no damage to repair.
+	if grounded and start_vel.y <= 0.0 and _step_up(delta):
+		if not was_on_floor:
+			landed.emit(prev_vy)
+		was_on_floor = true
+		return
 
 	move_and_slide()
 	_clip_velocity_to_contacts()
+	var flat_pos: Vector3 = global_position
+	var flat_vel: Vector3 = velocity
+	if grounded and start_vel.y <= 0.0 \
+	and _retry_step_up(start_pos, start_vel, flat_pos, flat_vel, delta):
+		if not was_on_floor:
+			landed.emit(prev_vy)
+		was_on_floor = true
+		return
 
-	# Source StepMove: keep the plain slide result, then retry the whole move from a
-	# step height up and commit whichever covered more ground. Re-running the move
-	# rather than teleporting is what stops ramps from flinging the body forward.
-	if blocked and grounded and floor_type != FloorType.NONE:
-		var flat_pos: Vector3 = global_position
-		var flat_vel: Vector3 = velocity
-		var stepped: bool = _try_step_move(start_pos, start_vel)
-		var flat_dist: float = Vector2(
-			flat_pos.x - start_pos.x, flat_pos.z - start_pos.z
-		).length_squared()
-		var step_dist: float = Vector2(
-			global_position.x - start_pos.x, global_position.z - start_pos.z
-		).length_squared()
-		# Falling back to the plain move means restoring its result, not the position
-		# from before it ran, or the frame's movement is thrown away.
-		if not stepped or flat_dist > step_dist:
-			global_position = flat_pos
-			velocity = flat_vel
-			# Source falls back to TryPlayerMove's velocity, which has been clipped
-			# along the blocking plane and keeps its tangential component. Godot's
-			# move_and_slide leaves nothing when the hull meets a riser face square on,
-			# so a step the gate had already approved would commit a dead stop and cost
-			# the whole run its momentum. Re-clip from the entry velocity instead.
-			_recover_blocked_velocity(start_vel)
-		else:
-			# Vertical velocity comes from the plain move; the step is a position fix.
-			velocity.y = flat_vel.y
-			# Absorb the lift here, in the tick that caused it. Leaving this to _process
-			# lets the raw teleport reach the eye for one whole frame first, which is a
-			# full-riser jump upward no smoothing downstream can undo.
-			if config.smooth_vertical_step:
-				_absorb_body_rise(start_pos.y)
-
+	# Descending, hold the body on the stairs. Without it every riser leaves the body
+	# briefly airborne, floor_type drops to NONE and ground acceleration cuts out.
+	var snapped_down: bool = false
+	if grounded:
+		snapped_down = _step_down()
+	if not snapped_down:
+		_smooth_automatic_floor_drop(start_pos.y)
 
 	if is_on_floor() and not was_on_floor:
 		landed.emit(prev_vy)
 	was_on_floor = is_on_floor()
 
 
-# Rebuild horizontal speed from the entry velocity clipped along whatever blocked the
-# move, matching what Source's TryPlayerMove leaves behind. Only raises speed, so a
-# genuine head-on wall still stops the body.
-func _recover_blocked_velocity(start_vel: Vector3) -> void:
-	var flat_start: Vector3 = Vector3(start_vel.x, 0.0, start_vel.z)
-	if flat_start.length_squared() < 0.000001:
-		return
-	var clipped: Vector3 = flat_start
-	for i: int in get_slide_collision_count():
-		var normal: Vector3 = get_slide_collision(i).get_normal()
-		if clipped.dot(normal) < 0.0:
-			clipped = clipped.slide(normal)
-	clipped.y = 0.0
-	if clipped.length() <= Vector2(velocity.x, velocity.z).length():
-		return
-	velocity.x = clipped.x
-	velocity.z = clipped.z
+# Place the body on a step ahead by probing down onto it from above, so the hull never
+# contacts the riser and horizontal velocity survives untouched. Returns false when
+# there is no step, leaving the caller to slide normally.
+func _step_up(delta: float) -> bool:
+	if _skip_step_probe_once:
+		_skip_step_probe_once = false
+		return false
+	var motion: Vector3 = Vector3(velocity.x, 0.0, velocity.z) * delta
+	if motion.length() < 0.0001:
+		return false
+	# Only worth probing when something blocks the flat move, and only when that
+	# something is too steep to walk. A walkable slope blocks a horizontal move too, but
+	# move_and_slide climbs it correctly; stepping it instead teleports the body up the
+	# whole ramp, which would wreck surf.
+	var block: KinematicCollision3D = KinematicCollision3D.new()
+	var block_motion: Vector3 = motion + motion.normalized() * FLOOR_COL_MARGIN * 2.0
+	if not test_move(global_transform, block_motion, block):
+		return false
+	return _attempt_step_up(motion, _lowest_collision_normal_y(block), false)
 
 
-# Re-runs the move from one step height up, then drops back down onto the tread.
-# Mirrors Quake SV_WalkMove / Source StepMove: the slide move itself produces the
-# velocity, so no momentum is synthesised and ramps cannot fling the body.
-# Returns false when the stepped attempt found no walkable ground.
-func _try_step_move(start_pos: Vector3, start_vel: Vector3) -> bool:
+func _lowest_collision_normal_y(hit: KinematicCollision3D) -> float:
+	var lowest: float = 1.0
+	for i: int in hit.get_collision_count():
+		lowest = minf(lowest, hit.get_normal(i).y)
+	return lowest
+
+
+func _retry_step_up(
+		start_pos: Vector3,
+		start_vel: Vector3,
+		flat_pos: Vector3,
+		flat_vel: Vector3,
+		delta: float) -> bool:
+	var entry_speed: float = Vector2(start_vel.x, start_vel.z).length()
+	var flat_speed: float = Vector2(flat_vel.x, flat_vel.z).length()
+	if entry_speed < 0.001 or flat_speed >= entry_speed - 0.001:
+		return false
+	if get_slide_collision_count() == 0:
+		return false
+
 	global_position = start_pos
 	velocity = start_vel
+	var motion: Vector3 = Vector3(start_vel.x, 0.0, start_vel.z) * delta
+	if _attempt_step_up(motion, 1.0, true):
+		return true
+	global_position = flat_pos
+	velocity = flat_vel
+	return false
 
-	var up_hit: KinematicCollision3D = move_and_collide(
-		Vector3.UP * (config.step_height + FLOOR_COL_MARGIN), true
-	)
-	var up_dist: float = config.step_height + FLOOR_COL_MARGIN
-	if up_hit != null:
-		up_dist = up_hit.get_travel().y
-	if up_dist <= FLOOR_COL_MARGIN:
+
+func _attempt_step_up(
+		motion: Vector3,
+		lowest_block_y: float,
+		flat_landing_only: bool) -> bool:
+	var clearance: float = config.step_height * 2.0 + FLOOR_COL_MARGIN
+	var above: Transform3D = global_transform.translated(Vector3.UP * clearance)
+	# The destination has to be clear at the raised height, or this is a wall.
+	if test_move(above, motion):
 		return false
-	global_position += Vector3(0.0, up_dist, 0.0)
 
-	# Horizontal only: a downward component here would cancel the step we just took.
-	velocity.y = 0.0
-	move_and_slide()
-
-	var down_hit: KinematicCollision3D = move_and_collide(
-		Vector3.DOWN * (up_dist + FLOOR_COL_MARGIN), true
-	)
-	# Rejecting has to undo the lift as well. Leaving the body raised strands it in
-	# mid-air, and at the foot of a surf ramp that reads as an uncommanded bounce.
-	if down_hit == null or down_hit.get_normal().y < cos(max_floor_angle):
-		global_position = start_pos
-		velocity = start_vel
+	var landed_at: Transform3D = above.translated(motion)
+	var hit: KinematicCollision3D = KinematicCollision3D.new()
+	# Trace past the original height so a descent ending flush still registers.
+	var descent: float = clearance + config.step_height + FLOOR_COL_MARGIN
+	if not test_move(landed_at, Vector3.DOWN * descent, hit):
 		return false
-	global_position += down_hit.get_travel()
+
+	var ray_result: Dictionary = _step_landing_ray(hit, motion)
+	if ray_result.is_empty():
+		return false
+	var landing_normal: Vector3 = ray_result["normal"]
+	if landing_normal.y < cos(max_floor_angle):
+		return false
+
+	var target_position: Vector3 = landed_at.origin + hit.get_travel()
+	if landing_normal.y < MIN_FLAT_STEP_NORMAL_Y:
+		# A ramp's low edge can be a small vertical lip. Permit that one transition
+		# from flat ground, then leave the entire slope to move_and_slide.
+		if flat_landing_only or ground_normal.y < MIN_FLAT_STEP_NORMAL_Y:
+			return false
+		if landing_normal.y - lowest_block_y <= STEP_NORMAL_EPSILON:
+			return false
+		_skip_step_probe_once = true
+	else:
+		target_position.y = (ray_result["position"] as Vector3).y + safe_margin
+
+	var rise: float = target_position.y - global_position.y
+	if rise <= 0.0001 or rise > config.step_height:
+		return false
+
+	global_position = target_position
+	apply_floor_snap()
+	if config.smooth_vertical_step:
+		_absorb_body_rise(global_position.y - rise)
 	return true
+
+
+# Keep contact when running down stairs, so the body does not float off each riser.
+func _step_down() -> bool:
+	if is_on_floor() or velocity.y > 0.0:
+		return false
+	var hit: KinematicCollision3D = KinematicCollision3D.new()
+	if not test_move(global_transform, Vector3.DOWN * config.step_height, hit):
+		return false
+	if hit.get_normal().y < cos(max_floor_angle):
+		return false
+	var drop: float = hit.get_travel().y
+	if drop >= -0.0001:
+		return false
+	global_position.y += drop
+	velocity.y = 0.0
+	apply_floor_snap()
+	if config.smooth_vertical_step:
+		_absorb_body_rise(global_position.y - drop)
+	return true
+
+
+func _smooth_automatic_floor_drop(previous_y: float) -> void:
+	var drop: float = previous_y - global_position.y
+	if drop <= 0.0 or drop > config.step_height + FLOOR_COL_MARGIN:
+		return
+	if not is_on_floor() or get_floor_normal().y < MIN_FLAT_STEP_NORMAL_Y:
+		return
+	if not config.smooth_vertical_step:
+		return
+	if drop < FLOOR_COL_MARGIN * 2.0:
+		_absorb_upward_step_settle(drop)
+		return
+	_absorb_body_rise(previous_y)
+
+
+func _absorb_upward_step_settle(drop: float) -> void:
+	if _view_offset < -0.001:
+		_view_offset = minf(_view_offset + drop, 0.0)
+		_smoothed_view_y = global_position.y + _view_offset
+	if _visual_step_offset < -0.001:
+		_visual_step_offset = minf(_visual_step_offset + drop, 0.0)
+
+
+func _step_landing_ray(
+		landing: KinematicCollision3D,
+		motion: Vector3) -> Dictionary:
+	var ahead_distance: float = config.width * 0.5 + STEP_RAY_AHEAD
+	var ahead: Vector3 = motion.normalized() * ahead_distance
+	var ray_origin: Vector3 = landing.get_position() + ahead
+	var ray_start: Vector3 = ray_origin + Vector3.UP * (
+		config.step_height + FLOOR_COL_MARGIN
+	)
+	var ray_end: Vector3 = ray_origin + Vector3.DOWN * FLOOR_COL_MARGIN
+	var exclude: Array[RID] = [get_rid()]
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
+		ray_start,
+		ray_end,
+		collision_mask,
+		exclude
+	)
+	var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
+	return space.intersect_ray(query)
 
 
 # Source SmoothViewOnStairs (baseplayer_shared.cpp): the eye chases the body's actual
@@ -438,37 +567,79 @@ func _try_step_move(start_pos: Vector3, start_vel: Vector3) -> bool:
 # arriving mid-catch-up just moves the target instead of restarting the easing.
 func _smooth_view_on_stairs(delta: float) -> void:
 	var current_y: float = global_position.y
+	var horizontal_speed: float = Vector2(velocity.x, velocity.z).length()
+	var smoothing_speed: float = horizontal_speed * _step_smoothing_grade
+	if smoothing_speed < 0.001:
+		smoothing_speed = config.step_smoothing_speed
+	if config.smooth_vertical_step:
+		_visual_step_offset = move_toward(
+			_visual_step_offset, 0.0, smoothing_speed * delta
+		)
+	else:
+		_visual_step_offset = 0.0
+
 	# A crouch ease owns the eye height outright, so drop any step lag rather than let
 	# the two fight. Leaving the ground is not a reason to discard it: zeroing mid-climb
 	# snaps the eye by whatever was outstanding, which is what a jump off a stair did.
 	if not config.smooth_vertical_step or _crouch_view_tween_active():
 		_smoothed_view_y = current_y
 		_view_offset = 0.0
-		camera_rig.set_step_offset(0.0)
 		return
 
-	# Source closes this at a flat 150 u/s (SmoothViewOnStairs). Keep it flat: a rate that
-	# scales with the outstanding lag makes the frame right after a step the fastest one,
-	# which is the frame that most needs to be gentle.
-	_view_offset = move_toward(_view_offset, 0.0, config.step_smoothing_speed * delta)
+	# Speed matching avoids a rise-pause cycle between treads.
+	_view_offset = move_toward(_view_offset, 0.0, smoothing_speed * delta)
 	_smoothed_view_y = current_y + _view_offset
-	camera_rig.set_step_offset(_view_offset)
 
 
-# Cancel a discrete body rise in the eye, so the step is invisible on the frame it
-# happens and _process only has to walk the offset back to zero. Physics interpolation
-# cannot do this for us: _try_step_move writes global_position outright, and a teleport
-# is a new authoritative pose to the interpolator, not motion to blend.
+# Preserve the eye's world height when stair stepping teleports the body.
 func _absorb_body_rise(previous_y: float) -> void:
 	var rise: float = global_position.y - previous_y
 	if absf(rise) < 0.001:
 		return
+	_step_smoothing_grade = absf(rise) / _step_run_estimate()
+	_absorb_view_shift(rise)
+	_visual_step_offset = clampf(
+		_visual_step_offset - rise, -config.step_height * 2.0, config.step_height * 2.0
+	)
+
+
+func _absorb_view_shift(shift: float) -> void:
+	if absf(shift) < 0.001:
+		return
 	_view_offset = clampf(
-		_view_offset - rise, -config.step_height, config.step_height
+		_view_offset - shift, -config.step_height * 2.0, config.step_height * 2.0
 	)
 	_smoothed_view_y = global_position.y + _view_offset
+
+
+func _apply_render_step_offsets() -> void:
+	var fraction: float = Engine.get_physics_interpolation_fraction()
 	if camera_rig:
-		camera_rig.set_step_offset(_view_offset)
+		var eye_offset: float = lerpf(
+			_previous_view_offset,
+			_view_offset,
+			fraction,
+		)
+		camera_rig.set_step_offset(eye_offset)
+	if visual_root:
+		var model_offset: float = lerpf(
+			_previous_visual_step_offset,
+			_visual_step_offset,
+			fraction,
+		)
+		_set_visual_step_offset(model_offset)
+
+
+func _set_visual_step_offset(offset: float) -> void:
+	if visual_root == null:
+		_applied_visual_step_offset = 0.0
+		return
+	visual_root.position.y += offset - _applied_visual_step_offset
+	_applied_visual_step_offset = offset
+
+
+func _step_run_estimate() -> float:
+	return maxf(config.width + STEP_RAY_AHEAD * 2.0, 0.001)
 
 
 # Source skips stair smoothing while the view offset itself is animating, so a crouch
@@ -507,14 +678,20 @@ func _crouch() -> void:
 	# by the full hull difference so the head holds its world height and the feet
 	# tuck up. The raised hull sits inside the standing one, so no clearance test is
 	# needed. Ramps count as air, so boarding a surf ramp ducks the same way.
+	var raised_origin: bool = false
+	var old_view_height: float = camera_rig.view_height if camera_rig else 0.0
 	if floor_type != FloorType.FLOOR and not _air_crouch_raised:
 		_air_crouch_raise = config.stand_height - config.crouch_height
 		global_position.y += _air_crouch_raise
 		_air_crouch_raised = true
+		raised_origin = true
 	_apply_collider_size(config.crouch_height)
 	if camera_rig:
 		if floor_type == FloorType.FLOOR:
-			_set_crouch_view(config.crouch_view_offset, config.crouch_time)
+			_set_crouch_view(
+				config.crouch_view_offset,
+				config.crouch_smoothing_speed
+			)
 		else:
 			# The origin raise and the instant view drop cancel out, holding the
 			# camera at its world height; easing here would bob.
@@ -522,12 +699,19 @@ func _crouch() -> void:
 				_crouch_tween.kill()
 			camera_rig.view_height = config.crouch_view_offset
 	crouched = true
+	if raised_origin:
+		if camera_rig and config.smooth_vertical_step:
+			var view_shift: float = _air_crouch_raise \
+				+ camera_rig.view_height - old_view_height
+			_absorb_view_shift(view_shift)
+		reset_physics_interpolation()
 
 
 func _uncrouch() -> void:
 	# A raised air duck stands by dropping the origin back down as the legs extend,
 	# so the standing hull has to fit below rather than overhead.
 	var origin_drop: float = _air_crouch_raise if _air_crouch_raised else 0.0
+	var old_view_height: float = camera_rig.view_height if camera_rig else 0.0
 	if not _has_clearance(config.stand_height, -origin_drop):
 		return
 
@@ -543,8 +727,17 @@ func _uncrouch() -> void:
 				_crouch_tween.kill()
 			camera_rig.view_height = config.standing_view_offset
 		else:
-			_set_crouch_view(config.standing_view_offset, config.uncrouch_time)
+			_set_crouch_view(
+				config.standing_view_offset,
+				config.uncrouch_smoothing_speed
+			)
 	crouched = false
+	if origin_drop > 0.0:
+		if camera_rig and config.smooth_vertical_step:
+			var view_shift: float = -origin_drop \
+				+ camera_rig.view_height - old_view_height
+			_absorb_view_shift(view_shift)
+		reset_physics_interpolation()
 
 
 # Landing absorbs an air duck's origin raise (the feet met the floor), so a later
@@ -557,7 +750,10 @@ func _land_air_crouch() -> void:
 	_air_crouch_raised = false
 	_air_crouch_raise = 0.0
 	if camera_rig:
-		_set_crouch_view(config.crouch_view_offset, config.crouch_time)
+		_set_crouch_view(
+			config.crouch_view_offset,
+			config.crouch_smoothing_speed
+		)
 
 
 func _apply_collider_size(height: float) -> void:
@@ -571,21 +767,25 @@ func _apply_collider_size(height: float) -> void:
 	collision.position.y = height / 2.0
 
 
-# Source eases the grounded duck view with SimpleSpline; cubic in-out is the closest
-# Tween equivalent. The duration scales with the distance left to travel so an
-# interrupted duck does not restart the full easing.
-func _set_crouch_view(new_y: float, base_time: float) -> void:
+# The duration scales with the distance left to travel so an interrupted duck does not
+# restart the full easing.
+func _set_crouch_view(new_y: float, smoothing_speed: float) -> void:
 	if _crouch_tween:
 		_crouch_tween.kill()
-	var span: float = absf(config.standing_view_offset - config.crouch_view_offset)
-	if span <= 0.0 or base_time <= 0.0:
+	if config.crouch_transition_mode == SUCCConfig.CrouchTransitionMode.SNAP \
+	or smoothing_speed <= 0.0:
 		camera_rig.view_height = new_y
 		return
 	var remaining: float = absf(camera_rig.view_height - new_y)
+	if remaining <= 0.0:
+		return
 	_crouch_tween = create_tween()
-	_crouch_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN_OUT)
+	_crouch_tween.set_trans(Tween.TRANS_LINEAR)
 	_crouch_tween.tween_property(
-		camera_rig, "view_height", new_y, base_time * (remaining / span)
+		camera_rig,
+		"view_height",
+		new_y,
+		remaining / smoothing_speed
 	)
 
 
