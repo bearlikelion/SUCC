@@ -4,6 +4,17 @@ All notable changes to SUCC are documented here. Format follows [Keep a Changelo
 
 ## [Unreleased]
 
+### Changed
+
+- Stair traversal now render-interpolates the first-person camera and optional
+  `visual_root_path` independently from the fixed-tick collision body. Walking and
+  sprinting up or down stairs follow one smooth grade without sacrificing momentum.
+- Grounded crouch transitions now use `crouch_transition_mode`. `SMOOTH` moves linearly at
+  `crouch_smoothing_speed` and `uncrouch_smoothing_speed`; `SNAP` applies the view height
+  immediately. The SurfsUp default uses 7.5 m/s in both directions.
+- Air crouches remain immediate and raise the legs while holding the head at the same
+  world height, matching Source-style crouch jumping.
+
 ## [0.1.0] - 2026-07-25
 
 First real release. SUCC is the character controller from [SurfsUp](https://store.steampowered.com/app/3454830/SurfsUp/), pulled out into a standalone Godot 4 addon.

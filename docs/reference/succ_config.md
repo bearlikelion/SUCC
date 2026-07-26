@@ -71,8 +71,8 @@ config.max_speed = SUCCConfig.source_units(320.0)   # 8.128 m/s
 | `crouch_smoothing_speed` | `float` | `7.5` | Camera speed in m/s while crouching. |
 | `uncrouch_smoothing_speed` | `float` | `7.5` | Camera speed in m/s while standing up. |
 | `third_person_distance` | `float` | `2.0` | Spring arm length in 3rd person. |
-| `smooth_vertical_step` | `bool` | `true` | Lerp the camera after step-up/down snaps. |
-| `step_smoothing_speed` | `float` | `3.81` | Fallback stair catch-up speed in m/s. |
+| `smooth_vertical_step` | `bool` | `true` | Render-smooth the camera and model over step-up/down snaps. |
+| `step_smoothing_speed` | `float` | `3.81` | Fallback stair catch-up rate near zero speed, in m/s. |
 
 ## Mouse
 

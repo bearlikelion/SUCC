@@ -1,7 +1,8 @@
 # SUCC - SurfsUp Character Controller
 
 A first and third-person character controller for Godot 4 with Quake and Source engine
-movement: bunnyhopping, surfing, air strafing, stair stepping and crouch-jumping.
+movement: bunnyhopping, surfing, air strafing, smoothly rendered stair stepping and
+crouch-jumping.
 
 Written in statically typed GDScript, based on the [Quake movement
 code](https://github.com/id-software/quake) and [Valve's Source SDK
@@ -18,10 +19,14 @@ open-sourced under the MIT License for anyone to use, learn from, and build on.
 - **Movement that feels right.** Air acceleration, bunnyhopping, slope surfing and
   Source-accurate stair stepping, ported by reading the original engine source rather than
   approximating it.
+- **Smooth first- and third-person traversal.** The camera and player model glide up and
+  down stairs at walking or sprint speed instead of following the body's discrete steps.
+- **Configurable crouch transitions.** Choose SurfsUp-style linear smoothing or an
+  immediate snap. Air crouches still raise the legs without moving the head.
 - **Five movement presets.** Ship your game feeling like Half-Life, Quake, Quake 2,
   Half-Life 2 or SurfsUp by assigning a resource file. Swap at runtime with one call.
-- **Tuning without code.** Gravity, speed, friction, jump height, hull size and eye height
-  all live in a `SUCCConfig` resource you edit in the Inspector.
+- **Tuning without code.** Gravity, speed, friction, jump height, hull size, eye height and
+  crouch smoothing all live in a `SUCCConfig` resource you edit in the Inspector.
 - **A test gym.** A demo level that exercises every feature, with a speedometer reading
   both metres and engine units.
 - **Built to be extended.** Signals and override hooks for your game's health, weapons and

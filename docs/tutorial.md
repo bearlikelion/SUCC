@@ -58,13 +58,14 @@ SUCC ships with a test level built to exercise every movement feature. Open
 You spawn on the yellow pad. Six lanes run away from you, each one built to test a
 different thing. Spend a minute on each:
 
-- **Stairs** (far left, tan), walk straight up. You should glide up the steps rather
-  than bumping.
+- **Stairs** (far left, tan), walk and sprint both up and down. The first-person camera
+  and third-person model should trace a smooth grade rather than snapping to each tread.
 - **Slants** (green), three ramps at 15°, 30° and 44°. All three are walkable.
 - **Bunnyhop blocks** (orange, centre), hold **Space** while running along them.
   Holding jump is enough; you don't need to tap it.
 - **Crouch corridor** (purple), walk into it standing and you stop. Hold **Ctrl** and
-  you fit.
+  you fit. The default SurfsUp preset eases the grounded camera; Quake-style presets can
+  snap it instead.
 - **Surf ramp** (blue), the steep peak. Walk up the yellow ramp to the top, drop onto
   one of the sloped faces, and hold a strafe key into the slope.
 - **Slide** (far right), a 40° chute you slide down.

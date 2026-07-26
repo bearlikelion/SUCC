@@ -6,7 +6,11 @@
 
 A Godot 4 character controller that can feel like Quake, Half-Life, Quake 2, Half-Life 2 or SurfsUp, by swapping one resource file.
 
-You get the movement those engines are known for: bunnyhopping, surfing, air strafing, stair stepping and crouch jumping. Written in statically typed GDScript, ported by reading the original engine source rather than guessing at it.
+You get the movement those engines are known for: bunnyhopping, surfing, air strafing,
+momentum-preserving stair stepping and Source-style crouch jumping. Stair traversal is
+render-smoothed for both the first-person camera and third-person model, and grounded
+crouching can be smooth or instant. Written in statically typed GDScript, ported by
+reading the original engine source rather than guessing at it.
 
 This is the controller from [**SurfsUp**](https://store.steampowered.com/app/3454830/SurfsUp/?utm_source=SUCC), open-sourced under the MIT License.
 
@@ -17,7 +21,9 @@ This is the controller from [**SurfsUp**](https://store.steampowered.com/app/345
 ## What you get
 
 - **Five movement presets.** Pick an engine's feel by assigning a resource, or swap at runtime with one call.
-- **Tuning without code.** Gravity, speed, friction, jump height, hull size, eye height, head bob and view tilt are all properties on a resource you edit in the inspector.
+- **Smooth stairs in both views.** Walk or sprint up and down steps without losing momentum, snapping the camera or jolting the third-person model.
+- **Source-style crouching.** Grounded crouches can ease at SurfsUp's linear speed or snap immediately; air crouches raise the legs while preserving head height.
+- **Tuning without code.** Gravity, speed, friction, jump height, hull size, eye height, crouch transitions, head bob and view tilt are all properties on a resource you edit in the inspector.
 - **A test gym.** Six lanes covering stairs, slopes, bhop, crouch, surf and slide, with a speedometer reading both metres and engine units.
 - **Signals and hooks** for wiring up your own health, weapons and game states without editing the controller.
 - **Multiplayer support.** Authority checks throughout, plus a lightweight `SUCCPawn` for remote players. Works with ENet, WebSocket, GodotSteam or anything else.

@@ -54,10 +54,20 @@ These two decide whether your game can bhop and surf at all:
 - **`step_height`**, the tallest ledge you can walk up without jumping. All four
   engines use 18 units (0.457 m). Much higher and you start climbing walls.
 
+### Stair smoothing
+
+- **`smooth_vertical_step`**, smooths the rendered first-person camera and third-person
+  model while the collision body takes discrete steps. Disable it for rigid snapping.
+- **`visual_root_path`** on `SUCC`, the optional model pivot that receives the same
+  render-smoothed offset as the camera. Keep collision shapes outside this node.
+- **`step_smoothing_speed`**, the fallback vertical rate when horizontal speed is almost
+  zero. During normal traversal SUCC derives the rate from movement speed and stair grade,
+  so walking and sprinting remain smooth in both directions.
+
 ### Crouch timing
 
 - **`crouch_transition_mode`**, whether grounded crouches move the camera smoothly or
-  snap immediately.
+  snap immediately. `SMOOTH` is the default.
 - **`crouch_smoothing_speed`** / **`uncrouch_smoothing_speed`**, linear camera speed
   in metres per second. SurfsUp v2 uses 7.5 in both directions.
 - Air crouches are always instant so the legs tuck upward without snapping the head,

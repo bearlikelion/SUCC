@@ -11,6 +11,7 @@ The main controller. Extend this class for your game's player.
 | `enable_bhop` | `bool` | Hold-jump buffered jumping. Default `true`. |
 | `enable_surf` | `bool` | Use floor normal for jump direction (slope surfing). Default `true`. |
 | `default_camera_mode` | `CameraMode` | Starting camera mode (`FIRST_PERSON` / `THIRD_PERSON`). |
+| `visual_root_path` | `NodePath` | Optional model pivot that receives render-smoothed stair offsets. Keep collision outside it. |
 
 ## Enums
 
