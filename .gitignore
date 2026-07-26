@@ -16,3 +16,4 @@ mono_crash.*.json
 /Build
 /itch
 /dist
+/_site
