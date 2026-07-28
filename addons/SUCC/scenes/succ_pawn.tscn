@@ -1,6 +1,6 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene format=3 uid="uid://dcq6wmjthcjuf"]
 
-[ext_resource type="Script" path="res://addons/SUCC/scripts/succ_pawn.gd" id="1_pawn"]
+[ext_resource type="Script" uid="uid://bt3yqqe756fbx" path="res://addons/SUCC/scripts/succ_pawn.gd" id="1_pawn"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_1"]
 size = Vector3(0.813, 1.829, 0.813)
@@ -8,16 +8,16 @@ size = Vector3(0.813, 1.829, 0.813)
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_1"]
 properties/0/path = NodePath(".:synced_position")
 properties/0/spawn = true
-properties/0/replication_mode = 2
+properties/0/replication_mode = 1
 properties/1/path = NodePath(".:synced_yaw")
 properties/1/spawn = true
-properties/1/replication_mode = 2
+properties/1/replication_mode = 1
 properties/2/path = NodePath(".:synced_pitch")
 properties/2/spawn = true
-properties/2/replication_mode = 2
+properties/2/replication_mode = 1
 properties/3/path = NodePath(".:synced_velocity")
 properties/3/spawn = true
-properties/3/replication_mode = 2
+properties/3/replication_mode = 1
 properties/4/path = NodePath(".:synced_movement_state")
 properties/4/spawn = true
 properties/4/replication_mode = 1
@@ -28,15 +28,15 @@ properties/6/path = NodePath(".:synced_crouched")
 properties/6/spawn = true
 properties/6/replication_mode = 1
 
-[node name="SUCCPawn" type="CharacterBody3D"]
+[node name="SUCCPawn" type="CharacterBody3D" unique_id=1482238721]
 script = ExtResource("1_pawn")
 
-[node name="Collision" type="CollisionShape3D" parent="."]
+[node name="Collision" type="CollisionShape3D" parent="." unique_id=1849745877]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9145, 0)
 shape = SubResource("BoxShape3D_1")
 
-[node name="CameraPivot" type="Node3D" parent="."]
+[node name="CameraPivot" type="Node3D" parent="." unique_id=498890559]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.711, 0)
 
-[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=904526286]
 replication_config = SubResource("SceneReplicationConfig_1")
