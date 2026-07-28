@@ -68,13 +68,13 @@ func apply_preset(index: int) -> void:
 The demo level does this on keys 1-5. See `addons/SUCC/demo/test_level.gd` for a working
 version with a HUD readout.
 
-## Turn off surf jumps for engine accuracy
+## Turn off surf handling
 
-`enable_surf` is on by default. It adds the jump impulse along the floor's normal, so
-jumping off a ramp launches you along the slope. That's a SurfsUp behaviour; no id or
-Valve engine does it, they all jump straight up.
+`enable_surf` is on by default. It projects air acceleration along steep ramp faces so
+you can gain and hold speed while surfing. Surf ramps remain airborne and ignore jump
+input until you reach a walkable floor.
 
-For engine-accurate jumps, turn it off:
+To use ordinary airborne acceleration on steep faces instead, turn it off:
 
 ```gdscript
 enable_surf = false

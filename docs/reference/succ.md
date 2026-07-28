@@ -9,7 +9,7 @@ The main controller. Extend this class for your game's player.
 | `config` | `SUCCConfig` | Physics tuning resource. Falls back to `default_config.tres` if unset. |
 | `input_actions` | `Dictionary` | Maps logical names (`"jump"`, `"forward"`, ...) to project InputMap actions. |
 | `enable_bhop` | `bool` | Hold-jump buffered jumping. Default `true`. |
-| `enable_surf` | `bool` | Use floor normal for jump direction (slope surfing). Default `true`. |
+| `enable_surf` | `bool` | Project air acceleration along surf ramps. Default `true`. |
 | `default_camera_mode` | `CameraMode` | Starting camera mode (`FIRST_PERSON` / `THIRD_PERSON`). |
 | `visual_root_path` | `NodePath` | Optional model pivot that receives render-smoothed stair offsets. Keep collision outside it. |
 
@@ -66,3 +66,12 @@ func apply_config() -> void
 ```
 
 Re-derives collider size, `floor_snap_length` and camera height from the current `config`. Call it after assigning a new `SUCCConfig`; `_ready()` calls it for you on startup. See [Preset values](presets.md).
+
+## Teleports and respawns
+
+```gdscript
+func reset_camera_interpolation() -> void
+```
+
+Call after changing `global_position` directly. It resets both Godot physics interpolation
+and SUCC's local camera interpolation so the view does not streak from the old position.

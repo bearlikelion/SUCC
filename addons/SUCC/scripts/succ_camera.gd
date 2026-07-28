@@ -17,6 +17,7 @@ const PITCH_LIMIT_DEG: float = 89.0
 
 
 var _accumulated: Vector2 = Vector2.ZERO
+var _physics_offset: Vector3 = Vector3.ZERO
 var _step_offset: float = 0.0
 var _bob_offset: float = 0.0
 var _bob_time: float = 0.0
@@ -43,6 +44,11 @@ func _find_camera() -> Camera3D:
 
 func set_step_offset(offset: float) -> void:
 	_step_offset = offset
+	_apply_offsets()
+
+
+func set_physics_offset(offset: Vector3) -> void:
+	_physics_offset = offset
 	_apply_offsets()
 
 
@@ -93,7 +99,11 @@ func update_tilt(delta: float, velocity: Vector3, config: SUCCConfig) -> void:
 
 
 func _apply_offsets() -> void:
-	position.y = view_height + _step_offset + _bob_offset
+	position = _physics_offset + Vector3(
+		0.0,
+		view_height + _step_offset + _bob_offset,
+		0.0,
+	)
 
 
 func handle_input(event: InputEvent, config: SUCCConfig) -> void:

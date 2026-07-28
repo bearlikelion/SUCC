@@ -4,6 +4,20 @@ All notable changes to SUCC are documented here. Format follows [Keep a Changelo
 
 ## [Unreleased]
 
+### Changed
+
+- Surf ramps are always airborne: they report `FALLING` and ignore jump input until the
+  player reaches a walkable floor. `enable_surf` now controls ramp-aligned air
+  acceleration.
+- Camera translation now interpolates the controller's fixed-tick positions locally when
+  project-wide physics interpolation is disabled. Mouse look remains render-rate
+  responsive.
+
+### Removed
+
+- `SUCCConfig.surf_jump_retention`, because jumping from a surf ramp is no longer
+  supported.
+
 ## [0.1.1] - 2026-07-26
 
 ### Changed
@@ -52,7 +66,7 @@ It gives you Quake and Source style movement: bunnyhopping, surfing, air strafin
 - **Head bob and view tilt**, off Quake's `V_CalcBob` and `V_CalcRoll`. Each preset carries its engine's own values: Quake bobs hardest (`cl_bob` 0.02 on a 0.6 second cycle), Source barely at all (0.002), and Source has no strafe tilt because Valve ships `sv_rollangle` at 0. First person only, and both switch off by setting their amount to 0.
 - **`SUCCConfig.source_units()`** and **`quake_units()`**, so you can write config values in engine units (1 unit is about 1 inch) instead of converting to metres by hand.
 - **`SUCC.apply_config()`**, for swapping presets at runtime. Rebuilds the collider, floor snap distance and camera height from the new values.
-- **A demo gym** (`addons/SUCC/demo/test_level.tscn`) with six lanes: stairs, three slants, a bunnyhop ladder with widening gaps, a crouch corridor, a 55 degree surf ramp and a slide. Number keys 1 to 5 swap presets while you play, so you can feel the difference on the same obstacle. `F` toggles surf jumps, `R` respawns.
+- **A demo gym** (`addons/SUCC/demo/test_level.tscn`) with six lanes: stairs, three slants, a bunnyhop ladder with widening gaps, a crouch corridor, a 55 degree surf ramp and a slide. Number keys 1 to 5 swap presets while you play, so you can feel the difference on the same obstacle. `F` toggles surf handling, `R` respawns.
 - **A speedometer** under the crosshair reading both m/s and engine units per second, because Source players think in units and Godot thinks in metres.
 - **Documentation** at [bearlikelion.github.io/SUCC](https://bearlikelion.github.io/SUCC/), including an explanation of why holding jump makes you go faster.
 

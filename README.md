@@ -3,6 +3,7 @@
 [![Godot 4.6+](https://img.shields.io/badge/Godot-4.6%2B-blue?logo=godotengine&logoColor=white)](https://godotengine.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/bearlikelion/SUCC?include_prereleases&sort=semver)](https://github.com/bearlikelion/SUCC/releases)
+[![Godot Asset Store](https://img.shields.io/badge/Godot%20Asset%20Store-SUCC-478cbf?logo=godotengine&logoColor=white)](https://store.godotengine.org/asset/bearlikelion/succ/)
 
 A Godot 4 character controller that feels like Quake, Half-Life, Quake 2, Half-Life 2 or SurfsUp, by swapping one resource file.
 
@@ -46,7 +47,7 @@ See [preset values](https://bearlikelion.github.io/SUCC/reference/presets/) for 
 
 ## Getting started
 
-1. Copy `addons/SUCC/` into your project's `addons/` folder. Scripts register through `class_name`, so there's no plugin to enable.
+1. Install SUCC from the [Godot Asset Store](https://store.godotengine.org/asset/bearlikelion/succ/), or copy `addons/SUCC/` into your project's `addons/` folder yourself. Scripts register through `class_name`, so there's no plugin to enable.
 2. Add seven input actions: `forward`, `back`, `left`, `right`, `jump`, `crouch`, `sprint`. Any you skip get a warning and are disabled individually, so the rest still works.
 3. Drop `addons/SUCC/scenes/succ_character.tscn` into a scene with a floor, and press F6.
 4. To add your own game logic, make an inherited scene and extend `SUCC`.

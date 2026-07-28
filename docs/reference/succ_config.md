@@ -26,7 +26,6 @@ config.max_speed = SUCCConfig.source_units(320.0)   # 8.128 m/s
 |---|---|---|---|
 | `gravity` | `float` | `20.32` | m/s² downward. |
 | `jump_height` | `float` | `1.143` | Apex height (m). |
-| `surf_jump_retention` | `float` | `1.0` | Velocity retention when jumping off a ramp. |
 | `bhop_buffered_jump` | `bool` | `true` | Queue jump on landing if held. Requires `SUCC.enable_bhop`; either flag being false falls back to just-pressed jumps. |
 
 ## Ground Movement

@@ -32,7 +32,7 @@ movement feature, built from untextured CSG boxes.
 | Ctrl | Crouch |
 | Shift | Sprint |
 | V | First/third person |
-| F | Toggle surf jumps |
+| F | Toggle surf handling |
 | R | Respawn |
 | 1-5 | Swap movement preset |
 | Esc | Release the mouse |

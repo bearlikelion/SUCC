@@ -45,8 +45,7 @@ const MIN_RAMP_NORMAL_Y: float = 0.01
 # Maps logical action names to project InputMap action names.
 @export var input_actions: Dictionary[String, String] = DEFAULT_INPUT_ACTIONS.duplicate()
 @export var enable_bhop: bool = true
-# Adds the jump impulse along the floor normal for surf ramp boosts.
-# Turn off for engine-authentic jumps, which are always straight up.
+# Projects can disable ramp-aligned acceleration without changing the floor geometry.
 @export var enable_surf: bool = true
 @export var default_camera_mode: CameraMode = CameraMode.FIRST_PERSON
 # Optional third-person model pivot. Keep collision outside this node: it receives a
@@ -90,6 +89,9 @@ var _previous_visual_step_offset: float = 0.0
 var _visual_root_base_y: float = 0.0
 var _step_smoothing_grade: float = 0.0
 var _skip_step_probe_once: bool = false
+var _previous_physics_position: Vector3 = Vector3.ZERO
+var _current_physics_position: Vector3 = Vector3.ZERO
+var _manual_camera_interpolation: bool = false
 var _clearance_shape: BoxShape3D = BoxShape3D.new()
 var _clearance_params: PhysicsShapeQueryParameters3D = PhysicsShapeQueryParameters3D.new()
 
@@ -116,6 +118,10 @@ func _ready() -> void:
 		camera_rig.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	if visual_root:
 		visual_root.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	_manual_camera_interpolation = not bool(
+		ProjectSettings.get_setting("physics/common/physics_interpolation", false)
+	)
+	_reset_manual_camera_interpolation()
 	# On web there has been no user gesture yet, so a capture here is rejected and
 	# Firefox never recovers. The first click captures instead.
 	if OS.has_feature("web"):
@@ -147,6 +153,11 @@ func apply_config() -> void:
 		camera_rig.set_step_offset(0.0)
 		camera_rig.view_height = config.standing_view_offset
 		camera_rig.apply_mode(camera_mode, config)
+
+
+func reset_camera_interpolation() -> void:
+	reset_physics_interpolation()
+	_reset_manual_camera_interpolation()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -194,9 +205,14 @@ func _wish_speed() -> float:
 func _physics_process(delta: float) -> void:
 	if not is_multiplayer_authority():
 		return
+	if global_position.is_equal_approx(_current_physics_position):
+		_previous_physics_position = _current_physics_position
+	else:
+		_reset_manual_camera_interpolation()
 	if game_state == GameState.DISABLED or not _can_move():
 		velocity = Vector3.ZERO
 		move_and_slide()
+		_current_physics_position = global_position
 		return
 
 	_previous_view_offset = _view_offset
@@ -217,10 +233,11 @@ func _physics_process(delta: float) -> void:
 	_land_air_crouch()
 	_update_movement_state()
 	_smooth_view_on_stairs(delta)
+	_current_physics_position = global_position
 
 
 func _process(delta: float) -> void:
-	_apply_render_step_offsets()
+	_apply_render_offsets()
 	if camera_rig == null:
 		return
 	if camera_mode != CameraMode.FIRST_PERSON:
@@ -267,11 +284,8 @@ func _set_velocity(delta: float) -> void:
 	elif crouched and not wish_crouch:
 		_uncrouch()
 
-	# Ramps are too steep to walk, so they take air acceleration like being airborne,
-	# but you can still jump off one. That transfer jump is the core of surf.
+	# Surf ramps stay airborne. Jump input is ignored until a walkable floor is reached.
 	if floor_type == FloorType.RAMP:
-		if wish_jump:
-			_jump(delta)
 		_air_accelerate(delta, move_dir)
 		return
 
@@ -328,7 +342,7 @@ func _air_accelerate(delta: float, wish_dir: Vector3) -> void:
 	# direction along the surface first is what lets a surf ramp build speed.
 	# The alignment then has to use full 3D velocity, because the ramp-aligned wish
 	# has a vertical component that a horizontal-only dot would ignore.
-	var on_ramp: bool = floor_type == FloorType.RAMP
+	var on_ramp: bool = floor_type == FloorType.RAMP and enable_surf
 	if on_ramp:
 		var along: Vector3 = wish_dir.slide(ground_normal)
 		if along.length() > 0.001:
@@ -345,13 +359,9 @@ func _air_accelerate(delta: float, wish_dir: Vector3) -> void:
 
 func _jump(delta: float) -> void:
 	var impulse: float = sqrt(2.0 * config.gravity * config.jump_height)
-	if floor_type == FloorType.RAMP and enable_surf:
-		velocity += ground_normal * impulse * config.surf_jump_retention
-	else:
-		velocity.y = impulse
+	velocity.y = impulse
 	velocity.y -= config.gravity * delta * 0.5
-	if floor_type == FloorType.FLOOR:
-		_separate_jump_from_floor()
+	_separate_jump_from_floor()
 	jumped.emit()
 
 
@@ -442,13 +452,20 @@ func _air_step_up(delta: float) -> bool:
 	if motion.length() < 0.0001:
 		return false
 
-	# Only act when a near-vertical face actually blocks the horizontal move. A walkable
-	# slope also blocks it, but move_and_slide handles that correctly.
+	# A surf ramp is steeper than max_floor_angle, so is_on_floor() is false and this runs
+	# every tick of a slide. Stepping then climbs the ramp face and kills the surf, so
+	# riding one rules out the step entirely.
+	if floor_type == FloorType.RAMP:
+		return false
+
+	# Only act on a true wall. Anything at or above MIN_RAMP_NORMAL_Y is a face to slide
+	# down rather than lift over. Uses the lowest contact: a hop that clips a riser and
+	# something shallower still has the riser as the thing actually blocking it.
 	var block: KinematicCollision3D = KinematicCollision3D.new()
 	var block_motion: Vector3 = motion + motion.normalized() * FLOOR_COL_MARGIN * 2.0
 	if not test_move(global_transform, block_motion, block):
 		return false
-	if _lowest_collision_normal_y(block) >= cos(max_floor_angle):
+	if _lowest_collision_normal_y(block) > MIN_RAMP_NORMAL_Y:
 		return false
 
 	# Find the lowest lift that clears the obstruction, capped at one step.
@@ -648,9 +665,19 @@ func _absorb_view_shift(shift: float) -> void:
 	)
 
 
-func _apply_render_step_offsets() -> void:
+func _apply_render_offsets() -> void:
 	var fraction: float = Engine.get_physics_interpolation_fraction()
 	if camera_rig:
+		var physics_offset: Vector3 = Vector3.ZERO
+		if _manual_camera_interpolation:
+			var render_position: Vector3 = _previous_physics_position.lerp(
+				_current_physics_position,
+				fraction,
+			)
+			physics_offset = global_basis.inverse() * (
+				render_position - global_position
+			)
+		camera_rig.set_physics_offset(physics_offset)
 		var eye_offset: float = lerpf(
 			_previous_view_offset,
 			_view_offset,
@@ -691,8 +718,8 @@ func _set_floor_type(_delta: float) -> void:
 		floor_type = FloorType.RAMP if angle >= ramp_angle_threshold else FloorType.FLOOR
 		return
 
-	# Too steep to stand on is still a surface you can surf and jump off, so look for
-	# a ramp face among the contacts rather than calling it plain airborne.
+	# Too steep to stand on is still a surface you can surf, so look for a ramp face
+	# among the contacts rather than calling it plain airborne.
 	# Mirrors SourceMover.classify_floor_normals in SurfsUp v2.
 	var best: Vector3 = Vector3.ZERO
 	for i: int in get_slide_collision_count():
@@ -738,7 +765,7 @@ func _crouch() -> void:
 			var view_shift: float = _air_crouch_raise \
 				+ camera_rig.view_height - old_view_height
 			_absorb_view_shift(view_shift)
-		reset_physics_interpolation()
+		reset_camera_interpolation()
 
 
 func _uncrouch() -> void:
@@ -771,7 +798,7 @@ func _uncrouch() -> void:
 			var view_shift: float = -origin_drop \
 				+ camera_rig.view_height - old_view_height
 			_absorb_view_shift(view_shift)
-		reset_physics_interpolation()
+		reset_camera_interpolation()
 
 
 # Landing absorbs an air duck's origin raise (the feet met the floor), so a later
@@ -842,13 +869,22 @@ func _has_clearance(height: float, y_offset: float = 0.0) -> bool:
 func _update_movement_state() -> void:
 	var new_state: MovementState = MovementState.IDLE
 	var sprinting: bool = wish_sprint and _action_available.get("sprint", false)
-	if floor_type == FloorType.NONE:
+	if floor_type == FloorType.RAMP:
+		new_state = MovementState.FALLING
+	elif floor_type == FloorType.NONE:
 		new_state = MovementState.JUMPING if velocity.y > 0.0 else MovementState.FALLING
 	elif crouched:
 		new_state = MovementState.CROUCHING
 	elif velocity.length() > 0.1:
 		new_state = MovementState.SPRINTING if sprinting else MovementState.WALKING
 	_set_movement_state(new_state)
+
+
+func _reset_manual_camera_interpolation() -> void:
+	_previous_physics_position = global_position
+	_current_physics_position = global_position
+	if camera_rig:
+		camera_rig.set_physics_offset(Vector3.ZERO)
 
 
 func _set_movement_state(new_state: MovementState) -> void:

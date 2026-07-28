@@ -45,9 +45,9 @@ the same accumulation happens, except the ramp keeps you from falling. All SUCC 
 this is a surface steeper than `max_floor_angle` (50° by default). The demo's ramps are
 55°.
 
-`enable_surf` is a separate, non-authentic addition: it makes jumping off a ramp push you
-along the slope's normal rather than straight up. The original engines always jump
-straight up. Turn it off for accuracy.
+`enable_surf` projects air acceleration along steep ramp faces. Surf contact remains
+airborne, reports `FALLING`, and ignores jump input until the player reaches a walkable
+floor.
 
 ## Why stairs need special handling
 

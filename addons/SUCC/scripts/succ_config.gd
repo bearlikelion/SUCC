@@ -24,10 +24,6 @@ enum CrouchTransitionMode {
 ## The actual jump impulse is derived from this and [member gravity].
 @export var jump_height: float = 1.143
 
-## Factor applied to horizontal velocity when jumping off a ramp (surf boost).
-## 1.0 preserves all momentum; 0.0 kills it entirely.
-@export_range(0.0, 1.0) var surf_jump_retention: float = 1.0
-
 ## When true, holding jump queues a fresh jump on the next landing frame,
 ## enabling bunnyhop chains without pixel-perfect timing.
 @export var bhop_buffered_jump: bool = true

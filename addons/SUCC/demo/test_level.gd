@@ -95,6 +95,7 @@ func _apply_preset(index: int) -> void:
 func _respawn() -> void:
 	player.velocity = Vector3.ZERO
 	player.global_position = SPAWN_POSITION
+	player.reset_camera_interpolation()
 
 
 func _refresh_flags() -> void:
