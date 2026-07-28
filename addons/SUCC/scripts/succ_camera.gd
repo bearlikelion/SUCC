@@ -7,6 +7,7 @@ extends SpringArm3D
 # Mouse look rotates the owner SUCC around Y (yaw) and this node around X (pitch).
 
 
+# SUCC.camera_mode_changed fires for the same transition; connect either, not both.
 signal mode_changed(mode: SUCC.CameraMode)
 
 
@@ -14,6 +15,8 @@ const PITCH_LIMIT_DEG: float = 89.0
 
 
 @export var invert_mouse_y: bool = false
+# Node that receives mouse yaw. Falls back to the parent when unset.
+@export var yaw_target: Node3D
 
 
 var _accumulated: Vector2 = Vector2.ZERO
@@ -122,15 +125,17 @@ func handle_input(event: InputEvent, config: SUCCConfig) -> void:
 
 
 func _apply_rotation() -> void:
-	var parent: Node3D = get_parent() as Node3D
-	if parent == null:
+	var body: Node3D = yaw_target if yaw_target else get_parent() as Node3D
+	if body == null:
 		return
-	parent.rotate_object_local(Vector3.DOWN, _accumulated.x)
-	parent.orthonormalize()
+	body.rotate_object_local(Vector3.DOWN, _accumulated.x)
+	body.orthonormalize()
 
 	var invert: float = -1.0 if invert_mouse_y else 1.0
 	rotate_object_local(Vector3.RIGHT, invert * -_accumulated.y)
-	rotation.x = clamp(rotation.x, deg_to_rad(-PITCH_LIMIT_DEG), deg_to_rad(PITCH_LIMIT_DEG))
+	rotation.x = clampf(
+		rotation.x, deg_to_rad(-PITCH_LIMIT_DEG), deg_to_rad(PITCH_LIMIT_DEG)
+	)
 	orthonormalize()
 	_accumulated = Vector2.ZERO
 

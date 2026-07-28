@@ -228,8 +228,7 @@ func _physics_process(delta: float) -> void:
 	# looks airborne: gravity gets skipped, then reapplied, and the body bounces.
 	_set_floor_type(delta)
 	# After the move, so the landing frame sees FLOOR and can absorb an air duck's
-	# origin raise. Running it pre-move left floor_type a frame stale, and the raise
-	# survived the landing to drop the eye 0.58 m a few frames later.
+	# origin raise rather than carrying it past the landing.
 	_land_air_crouch()
 	_update_movement_state()
 	_smooth_view_on_stairs(delta)
@@ -636,7 +635,7 @@ func _smooth_view_on_stairs(delta: float) -> void:
 
 	# A crouch ease owns the eye height outright, so drop any step lag rather than let
 	# the two fight. Leaving the ground is not a reason to discard it: zeroing mid-climb
-	# snaps the eye by whatever was outstanding, which is what a jump off a stair did.
+	# snaps the eye by whatever was outstanding.
 	if not config.smooth_vertical_step or _crouch_view_tween_active():
 		_view_offset = 0.0
 		return

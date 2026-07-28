@@ -29,7 +29,6 @@ config = ExtResource("3_cfg")
 input_actions = {
 "back": "back",
 "crouch": "crouch",
-"duck": "duck",
 "forward": "forward",
 "jump": "jump",
 "left": "left",

@@ -16,8 +16,8 @@ extends CharacterBody3D
 @export var synced_yaw: float = 0.0
 @export var synced_pitch: float = 0.0
 @export var synced_velocity: Vector3 = Vector3.ZERO
-@export var synced_movement_state: int = 0
-@export var synced_game_state: int = 0
+@export var synced_movement_state: SUCC.MovementState = SUCC.MovementState.IDLE
+@export var synced_game_state: SUCC.GameState = SUCC.GameState.ACTIVE
 @export var synced_crouched: bool = false
 
 
@@ -29,10 +29,13 @@ func _physics_process(delta: float) -> void:
 		return
 	velocity = synced_velocity
 	if interpolate:
-		global_position = global_position.lerp(synced_position, clamp(interpolation_speed * delta, 0.0, 1.0))
-		rotation.y = lerp_angle(rotation.y, synced_yaw, clamp(interpolation_speed * delta, 0.0, 1.0))
+		var weight: float = clampf(interpolation_speed * delta, 0.0, 1.0)
+		global_position = global_position.lerp(synced_position, weight)
+		rotation.y = lerp_angle(rotation.y, synced_yaw, weight)
 		if camera_pivot:
-			camera_pivot.rotation.x = lerp_angle(camera_pivot.rotation.x, synced_pitch, clamp(interpolation_speed * delta, 0.0, 1.0))
+			camera_pivot.rotation.x = lerp_angle(
+				camera_pivot.rotation.x, synced_pitch, weight
+			)
 	else:
 		global_position = synced_position
 		rotation.y = synced_yaw
