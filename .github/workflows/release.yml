@@ -17,7 +17,8 @@ jobs:
       - name: Package addon
         run: |
           mkdir -p dist
-          zip -r "dist/SUCC-${GITHUB_REF_NAME}.zip" addons/SUCC LICENSE README.md CHANGELOG.md
+          cp CHANGELOG.md addons/SUCC/CHANGELOG.md
+          zip -r "dist/SUCC-${GITHUB_REF_NAME}.zip" addons/SUCC
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
