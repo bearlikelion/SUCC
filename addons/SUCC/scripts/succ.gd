@@ -251,6 +251,10 @@ func _process(delta: float) -> void:
 # Without this a surf ramp keeps accumulating downward velocity and you slide off
 # rather than riding the face, and there is nothing left to convert into air time.
 func _clip_velocity_to_contacts() -> void:
+	# Grounded walkable movement is already slid by move_and_slide; clipping again
+	# lets trimesh seam normals turn snap residue into downhill drift.
+	if is_on_floor() and floor_type == FloorType.FLOOR:
+		return
 	for i: int in get_slide_collision_count():
 		var normal: Vector3 = get_slide_collision(i).get_normal()
 		var into: float = velocity.dot(normal)
@@ -296,6 +300,10 @@ func _set_velocity(delta: float) -> void:
 		_jump(delta)
 		_air_accelerate(delta, move_dir)
 	else:
+		# Source WalkMove flattens vertical speed on ground; without it the slope-slid
+		# residual in velocity.y creeps the body with no input, since friction only
+		# scales x/z and gravity is skipped on FLOOR.
+		velocity.y = 0.0
 		_friction(delta, 1.0)
 		_accelerate(delta, move_dir)
 
@@ -713,8 +721,17 @@ func _set_floor_type(_delta: float) -> void:
 		ground_normal = get_floor_normal()
 		# Anything the body can stand on but not hold is a ramp; keyed off
 		# ramp_angle_threshold so it can never disagree with floor_max_angle.
+		# With surf off every standable surface is plain floor so friction holds it.
 		var angle: float = get_floor_angle()
-		floor_type = FloorType.RAMP if angle >= ramp_angle_threshold else FloorType.FLOOR
+		var is_ramp: bool = enable_surf and angle >= ramp_angle_threshold
+		floor_type = FloorType.RAMP if is_ramp else FloorType.FLOOR
+		return
+
+	# With surf off there is nothing to ride, and the scan would feed trimesh
+	# seam normals into ground_normal.
+	if not enable_surf:
+		ground_normal = Vector3.UP
+		floor_type = FloorType.NONE
 		return
 
 	# Too steep to stand on is still a surface you can surf, so look for a ramp face
