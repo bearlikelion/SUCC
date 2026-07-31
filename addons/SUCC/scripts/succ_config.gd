@@ -4,7 +4,6 @@ extends Resource
 # Physics and feel tuning for a SUCC character.
 # Defaults are Source-engine-inspired; see source_units() for the unit conversion.
 
-
 const SOURCE_MULT: float = 39.37
 
 
@@ -94,7 +93,11 @@ enum CrouchTransitionMode {
 ## Maximum vertical step the character can climb in a single move without
 ## needing to jump. Raising this helps clear taller ledges; too high produces
 ## climbing-up-walls artifacts.
-@export var step_height: float = 0.45
+@export var step_height: float = 0.45 :
+	set(val):
+		if step_height != val:
+			step_height = val
+			emit_changed()
 
 
 @export_group("Camera")

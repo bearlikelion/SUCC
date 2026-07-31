@@ -57,7 +57,10 @@ const MIN_RAMP_NORMAL_Y: float = 0.01
 		deg_to_rad(45.0)
 ## Steepest slope the body can stand on at all. Steeper surfaces leave it airborne.
 @export_range(0.0, 89.0, 0.5, "radians_as_degrees") var max_floor_angle: float = \
-		deg_to_rad(50.0)
+		deg_to_rad(50.0) :
+			set(val):
+				max_floor_angle = val
+				floor_max_angle = val
 
 
 var movement_state: MovementState = MovementState.IDLE
@@ -107,6 +110,12 @@ func _ready() -> void:
 		push_error("SUCC: missing child SUCCCamera named 'CameraRig'.")
 	if config == null:
 		config = load("res://addons/SUCC/resources/default_config.tres") as SUCCConfig
+	
+	config.changed.connect(func():
+		# Snap far enough to hold the floor when descending a full step.
+		floor_snap_length = config.step_height + FLOOR_COL_MARGIN
+	)
+
 	_validate_input_actions()
 	floor_max_angle = max_floor_angle
 	floor_block_on_wall = false
