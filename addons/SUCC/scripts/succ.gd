@@ -1,13 +1,9 @@
 class_name SUCC
 extends CharacterBody3D
 
-# SurfsUp Character Controller.
-# Multiplayer-focused, inheritable, state-based first/third-person controller.
-# Extend this class to build your game's player. Physics tuning lives in SUCCConfig.
-#
-# Required input actions (rebindable via input_actions export):
-#   forward, back, left, right, jump, crouch, sprint
-# Missing actions are disabled at runtime and reported via push_warning.
+# SurfsUp Character Controller: inheritable first/third-person controller.
+# Extend to build a player; physics tuning lives in SUCCConfig.
+# Needs input actions: forward, back, left, right, jump, crouch, sprint.
 
 
 signal movement_state_changed(old_state: MovementState, new_state: MovementState)
@@ -36,8 +32,8 @@ const FLOOR_COL_MARGIN: float = 0.02
 const STEP_NORMAL_EPSILON: float = 0.001
 const MIN_FLAT_STEP_NORMAL_Y: float = 0.99
 const STEP_RAY_AHEAD: float = 0.1
-# Below this the contact is a wall, not a ramp you could surf. Matches
-# SourceMover.MIN_RAMP_NORMAL_Y in SurfsUp v2.
+# Below this a contact is a wall, not a surfable ramp. Matches SurfsUp v2
+# SourceMover.MIN_RAMP_NORMAL_Y.
 const MIN_RAMP_NORMAL_Y: float = 0.01
 
 
@@ -45,11 +41,11 @@ const MIN_RAMP_NORMAL_Y: float = 0.01
 # Maps logical action names to project InputMap action names.
 @export var input_actions: Dictionary[String, String] = DEFAULT_INPUT_ACTIONS.duplicate()
 @export var enable_bhop: bool = true
-# Projects can disable ramp-aligned acceleration without changing the floor geometry.
+# Disables ramp-aligned acceleration without changing the floor geometry.
 @export var enable_surf: bool = true
 @export var default_camera_mode: CameraMode = CameraMode.FIRST_PERSON
-# Optional third-person model pivot. Keep collision outside this node: it receives a
-# render-only vertical offset while the authoritative body steps immediately.
+# Keep collision outside this node: it takes a render-only vertical offset while
+# the authoritative body steps immediately.
 @export_node_path("Node3D") var visual_root_path: NodePath
 
 ## Slope angle at or above which a walkable floor counts as a ramp.
@@ -80,8 +76,8 @@ var ground_normal: Vector3 = Vector3.UP
 
 var _action_available: Dictionary[String, bool] = {}
 var _crouch_tween: Tween
-# Source FinishDuck raises the origin for an air duck; tracked so the matching
-# unduck drops it again and a landing can absorb it.
+# Source FinishDuck raises the origin for an air duck; tracked so the unduck
+# drops it again and a landing can absorb it.
 var _air_crouch_raised: bool = false
 var _air_crouch_raise: float = 0.0
 # Applied eye offset, rate-limited so a one-tick step cannot jolt the view.
@@ -110,7 +106,7 @@ func _ready() -> void:
 		push_error("SUCC: missing child SUCCCamera named 'CameraRig'.")
 	if config == null:
 		config = load("res://addons/SUCC/resources/default_config.tres") as SUCCConfig
-	
+
 	config.changed.connect(func():
 		# Snap far enough to hold the floor when descending a full step.
 		floor_snap_length = config.step_height + FLOOR_COL_MARGIN
@@ -131,7 +127,7 @@ func _ready() -> void:
 		ProjectSettings.get_setting("physics/common/physics_interpolation", false)
 	)
 	_reset_manual_camera_interpolation()
-	# On web there has been no user gesture yet, so a capture here is rejected and
+	# No user gesture has happened yet on web, so capturing here is rejected and
 	# Firefox never recovers. The first click captures instead.
 	if OS.has_feature("web"):
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -139,7 +135,7 @@ func _ready() -> void:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
-# Re-derive collider, snap length and camera from config. Call after swapping config.
+# Call after swapping config.
 func apply_config() -> void:
 	if config == null:
 		return
@@ -174,8 +170,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if _can_look() and camera_rig:
 		camera_rig.handle_input(event, config)
-	# Browsers only grant pointer lock from a user gesture, and Firefox refuses to
-	# re-grant it from the same Escape press that released it. Recapture on click.
+	# Browsers grant pointer lock only from a user gesture, and Firefox refuses to
+	# re-grant it from the same Escape press that released it.
 	if event is InputEventMouseButton and event.pressed \
 	and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -232,12 +228,11 @@ func _physics_process(delta: float) -> void:
 	_set_velocity(delta)
 	_clamp_velocity()
 	_move_body(delta)
-	# Re-categorise after moving, the way Quake and Source do. Reading it only at the
-	# top of the tick leaves floor_type a frame stale, so the landing frame still
-	# looks airborne: gravity gets skipped, then reapplied, and the body bounces.
+	# Re-categorise after moving, as Quake and Source do; a stale floor_type leaves
+	# the landing frame airborne and the body bounces.
 	_set_floor_type(delta)
-	# After the move, so the landing frame sees FLOOR and can absorb an air duck's
-	# origin raise rather than carrying it past the landing.
+	# Ordered after the move so the landing frame sees FLOOR and can absorb an air
+	# duck's origin raise instead of carrying it past the landing.
 	_land_air_crouch()
 	_update_movement_state()
 	_smooth_view_on_stairs(delta)
@@ -255,13 +250,11 @@ func _process(delta: float) -> void:
 	camera_rig.update_tilt(delta, velocity, config)
 
 
-# Source ClipVelocity (gamemovement.cpp): strip the component heading into each
-# contact plane so the body travels along the surface instead of pressing through it.
-# Without this a surf ramp keeps accumulating downward velocity and you slide off
-# rather than riding the face, and there is nothing left to convert into air time.
+# Source ClipVelocity (gamemovement.cpp): strip velocity heading into each contact
+# plane, or a surf ramp accumulates downward speed and you slide off the face.
 func _clip_velocity_to_contacts() -> void:
-	# Grounded walkable movement is already slid by move_and_slide; clipping again
-	# lets trimesh seam normals turn snap residue into downhill drift.
+	# move_and_slide already slid grounded walkable movement; clipping again lets
+	# trimesh seam normals turn snap residue into downhill drift.
 	if is_on_floor() and floor_type == FloorType.FLOOR:
 		return
 	for i: int in get_slide_collision_count():
@@ -283,14 +276,14 @@ func _clamp_velocity() -> void:
 
 func _apply_gravity(delta: float) -> void:
 	# Ramps are too steep to stand on, so gravity keeps pulling; that downhill pull
-	# is what makes a surf ramp slide instead of holding you in place.
+	# is what makes a surf ramp slide.
 	if floor_type != FloorType.FLOOR:
 		velocity.y -= config.gravity * delta
 
 
 func _set_velocity(delta: float) -> void:
-	# Retried every tick: releasing crouch under a ceiling must not leave the body
-	# stuck crouched once the ceiling clears.
+	# Retried every tick so releasing crouch under a ceiling still stands once the
+	# ceiling clears.
 	if wish_crouch and not crouched:
 		_crouch()
 	elif crouched and not wish_crouch:
@@ -309,9 +302,8 @@ func _set_velocity(delta: float) -> void:
 		_jump(delta)
 		_air_accelerate(delta, move_dir)
 	else:
-		# Source WalkMove flattens vertical speed on ground; without it the slope-slid
-		# residual in velocity.y creeps the body with no input, since friction only
-		# scales x/z and gravity is skipped on FLOOR.
+		# Source WalkMove flattens vertical speed on ground; friction scales only x/z
+		# and gravity is skipped on FLOOR, so a slope residual would creep the body.
 		velocity.y = 0.0
 		_friction(delta, 1.0)
 		_accelerate(delta, move_dir)
@@ -353,17 +345,15 @@ func _air_accelerate(delta: float, wish_dir: Vector3) -> void:
 		return
 	wish_dir = wish_dir.normalized()
 
-	# On a ramp, strafing points straight into the face, and move_and_slide strips
-	# that whole component right back out, so speed never grows. Sliding the wish
-	# direction along the surface first is what lets a surf ramp build speed.
-	# The alignment then has to use full 3D velocity, because the ramp-aligned wish
-	# has a vertical component that a horizontal-only dot would ignore.
+	# move_and_slide strips a wish pointing into the ramp face straight back out, so
+	# sliding it along the surface first is what lets a surf ramp build speed.
 	var on_ramp: bool = floor_type == FloorType.RAMP and enable_surf
 	if on_ramp:
 		var along: Vector3 = wish_dir.slide(ground_normal)
 		if along.length() > 0.001:
 			wish_dir = along.normalized()
 
+	# Full 3D on a ramp: the aligned wish has a vertical component a flat dot misses.
 	var reference: Vector3 = velocity if on_ramp else Vector3(velocity.x, 0.0, velocity.z)
 	var speed_alignment: float = reference.dot(wish_dir)
 	var max_accel: float = config.max_air_speed - speed_alignment
@@ -400,19 +390,16 @@ func _move_body(delta: float) -> void:
 	var start_vel: Vector3 = velocity
 	var grounded: bool = is_on_floor() or was_on_floor
 
-	# Climb before sliding. Sliding first means the hull hits the riser, and that contact
-	# clips velocity along a near-vertical plane: a quarter of the speed gone at 15
-	# degrees off-normal, all of it head-on. Probing down onto the step from above never
-	# touches the riser, so there is no contact to clip and no damage to repair.
+	# Climb before sliding: sliding first clips velocity against the riser, while
+	# probing down from above never touches it.
 	if grounded and start_vel.y <= 0.0 and _step_up(delta):
 		if not was_on_floor:
 			landed.emit(prev_vy)
 		was_on_floor = true
 		return
 
-	# Bunnyhopping a staircase puts the hull into a riser mid-arc, and clipping against
-	# that near-vertical face costs the whole run-up. A riser within step_height is
-	# something to clear, not a wall, so lift over it before the slide.
+	# Bunnyhopping a staircase meets a riser mid-arc, and clipping that face costs
+	# the whole run-up. Within step_height it is something to clear, not a wall.
 	if not grounded:
 		_air_step_up(delta)
 
@@ -427,8 +414,8 @@ func _move_body(delta: float) -> void:
 		was_on_floor = true
 		return
 
-	# Descending, hold the body on the stairs. Without it every riser leaves the body
-	# briefly airborne, floor_type drops to NONE and ground acceleration cuts out.
+	# Hold the body on descending stairs, or every riser drops floor_type to NONE
+	# and cuts out ground acceleration.
 	var snapped_down: bool = false
 	if grounded:
 		snapped_down = _step_down()
@@ -440,9 +427,8 @@ func _move_body(delta: float) -> void:
 	was_on_floor = is_on_floor()
 
 
-# Place the body on a step ahead by probing down onto it from above, so the hull never
-# contacts the riser and horizontal velocity survives untouched. Returns false when
-# there is no step, leaving the caller to slide normally.
+# Probes down onto the step from above so the hull never contacts the riser and
+# horizontal velocity survives. False leaves the caller to slide normally.
 func _step_up(delta: float) -> bool:
 	if _skip_step_probe_once:
 		_skip_step_probe_once = false
@@ -450,10 +436,8 @@ func _step_up(delta: float) -> bool:
 	var motion: Vector3 = Vector3(velocity.x, 0.0, velocity.z) * delta
 	if motion.length() < 0.0001:
 		return false
-	# Only worth probing when something blocks the flat move, and only when that
-	# something is too steep to walk. A walkable slope blocks a horizontal move too, but
-	# move_and_slide climbs it correctly; stepping it instead teleports the body up the
-	# whole ramp, which would wreck surf.
+	# Only probe when blocked by something too steep to walk. move_and_slide climbs
+	# a walkable slope correctly; stepping it teleports the body up the whole ramp.
 	var block: KinematicCollision3D = KinematicCollision3D.new()
 	var block_motion: Vector3 = motion + motion.normalized() * FLOOR_COL_MARGIN * 2.0
 	if not test_move(global_transform, block_motion, block):
@@ -461,22 +445,20 @@ func _step_up(delta: float) -> bool:
 	return _attempt_step_up(motion, _lowest_collision_normal_y(block), false)
 
 
-# Airborne counterpart to _step_up. Applies through the whole arc, not just the rise:
-# a hop across a staircase usually meets the next riser on the way down.
+# Airborne counterpart to _step_up, applied through the whole arc: a hop across a
+# staircase usually meets the next riser on the way down.
 func _air_step_up(delta: float) -> bool:
 	var motion: Vector3 = Vector3(velocity.x, 0.0, velocity.z) * delta
 	if motion.length() < 0.0001:
 		return false
 
-	# A surf ramp is steeper than max_floor_angle, so is_on_floor() is false and this runs
-	# every tick of a slide. Stepping then climbs the ramp face and kills the surf, so
-	# riding one rules out the step entirely.
+	# is_on_floor() is false on a surf ramp, so this would run every tick of a slide
+	# and climb the ramp face.
 	if floor_type == FloorType.RAMP:
 		return false
 
-	# Only act on a true wall. Anything at or above MIN_RAMP_NORMAL_Y is a face to slide
-	# down rather than lift over. Uses the lowest contact: a hop that clips a riser and
-	# something shallower still has the riser as the thing actually blocking it.
+	# Only act on a true wall; at or above MIN_RAMP_NORMAL_Y is a face to slide down.
+	# Uses the lowest contact, since that is what actually blocks the hop.
 	var block: KinematicCollision3D = KinematicCollision3D.new()
 	var block_motion: Vector3 = motion + motion.normalized() * FLOOR_COL_MARGIN * 2.0
 	if not test_move(global_transform, block_motion, block):
@@ -553,7 +535,7 @@ func _attempt_step_up(
 	var target_position: Vector3 = landed_at.origin + hit.get_travel()
 	if landing_normal.y < MIN_FLAT_STEP_NORMAL_Y:
 		# A ramp's low edge can be a small vertical lip. Permit that one transition
-		# from flat ground, then leave the entire slope to move_and_slide.
+		# from flat ground, then leave the slope to move_and_slide.
 		if flat_landing_only or ground_normal.y < MIN_FLAT_STEP_NORMAL_Y:
 			return false
 		if landing_normal.y - lowest_block_y <= STEP_NORMAL_EPSILON:
@@ -573,7 +555,6 @@ func _attempt_step_up(
 	return true
 
 
-# Keep contact when running down stairs, so the body does not float off each riser.
 func _step_down() -> bool:
 	if is_on_floor() or velocity.y > 0.0:
 		return false
@@ -635,9 +616,8 @@ func _step_landing_ray(
 	return space.intersect_ray(query)
 
 
-# After Source SmoothViewOnStairs (baseplayer_shared.cpp), but decaying the outstanding
-# offset rather than chasing an absolute height: a step arriving mid-decay just adds to
-# the offset, so consecutive risers never restart the easing.
+# Source SmoothViewOnStairs (baseplayer_shared.cpp), but decaying the outstanding
+# offset instead of chasing a height, so consecutive risers never restart easing.
 func _smooth_view_on_stairs(delta: float) -> void:
 	var horizontal_speed: float = Vector2(velocity.x, velocity.z).length()
 	var smoothing_speed: float = horizontal_speed * _step_smoothing_grade
@@ -650,9 +630,8 @@ func _smooth_view_on_stairs(delta: float) -> void:
 	else:
 		_visual_step_offset = 0.0
 
-	# A crouch ease owns the eye height outright, so drop any step lag rather than let
-	# the two fight. Leaving the ground is not a reason to discard it: zeroing mid-climb
-	# snaps the eye by whatever was outstanding.
+	# A crouch ease owns the eye height outright, so drop step lag rather than let
+	# the two fight. Leaving the ground is not a reason to zero it: that snaps.
 	if not config.smooth_vertical_step or _crouch_view_tween_active():
 		_view_offset = 0.0
 		return
@@ -719,7 +698,7 @@ func _step_run_estimate() -> float:
 	return maxf(config.width + STEP_RAY_AHEAD * 2.0, 0.001)
 
 
-# Source skips stair smoothing while the view offset itself is animating, so a crouch
+# Source skips stair smoothing while the view offset is animating, so a crouch
 # ease and the step chaser cannot fight over the same eye height.
 func _crouch_view_tween_active() -> bool:
 	return _crouch_tween != null and _crouch_tween.is_running()
@@ -728,24 +707,22 @@ func _crouch_view_tween_active() -> bool:
 func _set_floor_type(_delta: float) -> void:
 	if is_on_floor():
 		ground_normal = get_floor_normal()
-		# Anything the body can stand on but not hold is a ramp; keyed off
-		# ramp_angle_threshold so it can never disagree with floor_max_angle.
-		# With surf off every standable surface is plain floor so friction holds it.
+		# Anything standable but not holdable is a ramp. With surf off every
+		# standable surface is plain floor, so friction holds it.
 		var angle: float = get_floor_angle()
 		var is_ramp: bool = enable_surf and angle >= ramp_angle_threshold
 		floor_type = FloorType.RAMP if is_ramp else FloorType.FLOOR
 		return
 
-	# With surf off there is nothing to ride, and the scan would feed trimesh
-	# seam normals into ground_normal.
+	# Nothing to ride with surf off, and the scan would feed trimesh seam normals
+	# into ground_normal.
 	if not enable_surf:
 		ground_normal = Vector3.UP
 		floor_type = FloorType.NONE
 		return
 
-	# Too steep to stand on is still a surface you can surf, so look for a ramp face
-	# among the contacts rather than calling it plain airborne.
-	# Mirrors SourceMover.classify_floor_normals in SurfsUp v2.
+	# Too steep to stand on is still surfable, so look for a ramp face among the
+	# contacts. Mirrors SurfsUp v2 SourceMover.classify_floor_normals.
 	var best: Vector3 = Vector3.ZERO
 	for i: int in get_slide_collision_count():
 		var normal: Vector3 = get_slide_collision(i).get_normal()
@@ -760,10 +737,8 @@ func _set_floor_type(_delta: float) -> void:
 
 
 func _crouch() -> void:
-	# Source air duck (gamemovement.cpp FinishDuck): instant, and raises the origin
-	# by the full hull difference so the head holds its world height and the feet
-	# tuck up. The raised hull sits inside the standing one, so no clearance test is
-	# needed. Ramps count as air, so boarding a surf ramp ducks the same way.
+	# Source FinishDuck: instant, raising the origin by the hull difference so the
+	# head holds world height. Raised hull sits inside the standing one, no test.
 	var raised_origin: bool = false
 	var old_view_height: float = camera_rig.view_height if camera_rig else 0.0
 	if floor_type != FloorType.FLOOR and not _air_crouch_raised:
@@ -779,8 +754,7 @@ func _crouch() -> void:
 				config.crouch_smoothing_speed
 			)
 		else:
-			# The origin raise and the instant view drop cancel out, holding the
-			# camera at its world height; easing here would bob.
+			# The origin raise and instant view drop cancel out; easing would bob.
 			if _crouch_tween:
 				_crouch_tween.kill()
 			camera_rig.view_height = config.crouch_view_offset
@@ -794,8 +768,8 @@ func _crouch() -> void:
 
 
 func _uncrouch() -> void:
-	# A raised air duck stands by dropping the origin back down as the legs extend,
-	# so the standing hull has to fit below rather than overhead.
+	# A raised air duck drops the origin as the legs extend, so the standing hull
+	# has to fit below rather than overhead.
 	var origin_drop: float = _air_crouch_raise if _air_crouch_raised else 0.0
 	var old_view_height: float = camera_rig.view_height if camera_rig else 0.0
 	if not _has_clearance(config.stand_height, -origin_drop):
@@ -826,8 +800,7 @@ func _uncrouch() -> void:
 		reset_camera_interpolation()
 
 
-# Landing absorbs an air duck's origin raise (the feet met the floor), so a later
-# grounded uncrouch must not drop the origin again.
+# The feet met the floor, so a later grounded uncrouch must not drop the origin.
 func _land_air_crouch() -> void:
 	if not crouched or floor_type != FloorType.FLOOR:
 		return
@@ -853,8 +826,7 @@ func _apply_collider_size(height: float) -> void:
 	collision.position.y = height / 2.0
 
 
-# The duration scales with the distance left to travel so an interrupted duck does not
-# restart the full easing.
+# Duration scales with distance left, so an interrupted duck does not restart.
 func _set_crouch_view(new_y: float, smoothing_speed: float) -> void:
 	if _crouch_tween:
 		_crouch_tween.kill()
@@ -876,8 +848,8 @@ func _set_crouch_view(new_y: float, smoothing_speed: float) -> void:
 
 
 func _has_clearance(height: float, y_offset: float = 0.0) -> bool:
-	# Inset on every axis: a box at exactly the hull size grazes the wall the body is
-	# already touching, which would report the ceiling as blocked while standing.
+	# A box at exactly the hull size grazes the wall the body already touches, which
+	# would report the ceiling blocked while standing.
 	var inset: float = FLOOR_COL_MARGIN * 2.0
 	_clearance_shape.size = Vector3(
 		config.width - inset, height - inset, config.width - inset
@@ -930,22 +902,19 @@ func set_game_state(new_state: GameState) -> void:
 	_on_game_state_changed(old_state, new_state)
 
 
-# Override to run logic on movement state transitions (e.g. play anim).
 func _on_movement_state_changed(_old: MovementState, _new: MovementState) -> void:
 	pass
 
 
-# Override to run logic on game state transitions.
 func _on_game_state_changed(_old: GameState, _new: GameState) -> void:
 	pass
 
 
-# Override to gate movement (return false while dead, stunned, frozen, etc.).
+# Override to gate movement while dead, stunned, frozen and so on.
 func _can_move() -> bool:
 	return game_state == GameState.ACTIVE
 
 
-# Override to gate mouse look.
 func _can_look() -> bool:
 	return game_state != GameState.DISABLED
 

@@ -39,15 +39,14 @@ else
     PM_Accelerate (wishdir, wishspeed, 1);
 ```
 
-The difference between those two functions is a single line: `PM_AirAccelerate` clamps the
-target to 30 units, `PM_Accelerate` does not. That clamp is what makes strafe-jumping
-possible ([why](movement.md#why-holding-jump-makes-you-faster)), so without it you get
-weak air steering that dies once you're at full speed.
+Those two functions differ by one line: `PM_AirAccelerate` clamps the target to 30
+units and `PM_Accelerate` does not. That clamp is what makes strafe-jumping possible
+([why](movement.md#why-holding-jump-makes-you-faster)), so without it you get weak air
+steering that dies at full speed.
 
-SUCC's air acceleration returns early once its cap is reached, so setting
-`air_acceleration = 0.0` would give *zero* air control, stricter than the real game. The
-preset therefore uses `air_acceleration = 1.0` with the air cap raised to full
-`max_speed`, which reproduces what Quake 2 actually does.
+SUCC returns early once its air cap is reached, so `air_acceleration = 0.0` would give
+*zero* air control, stricter than the real game. The preset uses `1.0` with the air cap
+raised to full `max_speed` instead, reproducing what Quake 2 actually does.
 
 ## Half-Life 2 walks at 190, not 320
 
@@ -61,8 +60,8 @@ preset therefore uses `air_acceleration = 1.0` with the air cap raised to full
 - `hl2_sprintspeed`, 320
 
 then `CheckParameters` takes the smaller of that and `sv_maxspeed`
-(`game/shared/gamemovement.cpp:996-999`). So ordinary HL2 walking is 190 units per
-second, and 320 is what you get holding sprint.
+(`game/shared/gamemovement.cpp:996-999`). So HL2 walks at 190, and 320 is what holding
+sprint gets you.
 
 Two more HL2 values worth noting:
 
@@ -117,11 +116,10 @@ Two GoldSrc specifics `goldsrc.tres` does **not** model:
 All four engines use 1 unit ≈ 1 inch, though only two places in the source say so
 outright: `halflife/dlls/world.cpp:482` comments gravity 800 as "67ft/sec", and
 `source-sdk-2013/src/game/shared/shareddefs.h:409-410` writes a fall speed as
-`sqrt(2 * gravity * 60 * 12)`, the `* 12` being twelve inches to the foot.
+`sqrt(2 * gravity * 60 * 12)`, the `* 12` being inches to the foot.
 
-SUCC uses 39.37 units per metre, Source's own approximation. The exact value is 39.3701;
-the difference is 0.03%, and Valve's number is what the original cvars were tuned
-against.
+SUCC uses 39.37 units per metre, Source's own approximation. The exact value is 39.3701,
+a 0.03% difference, and Valve's number is what the original cvars were tuned against.
 
 ## The origin sits in a different place
 

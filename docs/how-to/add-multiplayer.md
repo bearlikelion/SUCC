@@ -1,10 +1,20 @@
-# Networking
+# Add multiplayer
 
-SUCC is transport-agnostic - it works with any `MultiplayerPeer` (ENet, WebSocket, GodotSteam, etc.).
+SUCC is transport-agnostic. It works with any `MultiplayerPeer`: ENet, WebSocket,
+GodotSteam and the rest. There is no transport-specific code in the addon, so
+nothing here is tied to one of them.
 
-## Authority model
+!!! note "Work in progress"
 
-Each player instance has a **multiplayer authority** (the peer that controls it). The authority runs input, physics, and camera. All other peers see a read-only `SUCCPawn`.
+    Multiplayer support is still being built out. The authority checks and
+    `SUCCPawn` described below work today, but a complete networked example is
+    waiting on the [SUCC Demos](https://github.com/bearlikelion/SUCC-Demos)
+    repository. Expect this page to grow once that lands.
+
+## How authority works
+
+Every player instance has one owning peer, its **multiplayer authority**. That peer
+runs input, physics and the camera. Everyone else sees a read-only `SUCCPawn`.
 
 ```gdscript
 const PLAYER_SCENE: PackedScene = preload("res://player.tscn")
@@ -18,13 +28,13 @@ func spawn_player(peer_id: int) -> SUCC:
 	return player
 ```
 
-If `is_multiplayer_authority()` is `false`, SUCC skips input gathering and physics - it becomes inert.
+When `is_multiplayer_authority()` returns `false`, SUCC skips input gathering and
+physics entirely, so the instance goes inert.
 
-## Pawn pattern
+## Spawn a pawn for each remote player
 
-`SUCCPawn` is a stripped-down remote-peer representation. It doesn't run input or camera logic - it just interpolates a synced transform and state from the authority.
-
-Spawn one pawn per remote peer, with the pawn's authority set to the owning peer:
+`SUCCPawn` is the stripped-down remote representation. It runs no input and no
+camera logic, only interpolating a synced transform and state from the authority.
 
 ```gdscript
 const PAWN_SCENE: PackedScene = preload("res://my_pawn.tscn")
@@ -37,28 +47,16 @@ func spawn_pawn(peer_id: int) -> SUCCPawn:
 	return pawn
 ```
 
-## What's synced (default)
+By default the pawn's `MultiplayerSynchronizer` replicates position, yaw, pitch and
+velocity every tick, plus movement state, game state and the crouch flag on change.
 
-The pawn's `MultiplayerSynchronizer` replicates:
+## Drive the pawn from the authority
 
-- `synced_position` (every tick)
-- `synced_yaw`, `synced_pitch` (every tick)
-- `synced_velocity` (every tick)
-- `synced_movement_state`, `synced_game_state`, `synced_crouched` (on change)
+Give each player a paired `(SUCC, SUCCPawn)`. The authority writes its state onto
+its pawn every physics tick, and the synchronizer replicates that to other peers.
 
-## Adding your own synced fields
-
-On your subclass pawn scene:
-
-1. Add properties to your `SUCCPawn` subclass (e.g. `@export var synced_health: int = 100`).
-2. Open the `MultiplayerSynchronizer` node's **Replication** panel.
-3. Add `./synced_health` with the desired replication mode (always / on change).
-
-## Driving the pawn from the authority
-
-The authority pushes its state onto the matching remote pawn. Most games keep the authority SUCC and the remote SUCCPawn in separate scene trees (the authority sees *only* its own SUCC; remotes see *only* pawns for others). The authority RPCs its state to peers; the synchronizer handles the transport.
-
-Give each player a paired `(SUCC, SUCCPawn)`: the authority updates its pawn's `synced_*` fields every physics tick, and the synchronizer replicates them to non-authority peers.
+Most games keep the two in separate scene trees, so a peer sees only its own `SUCC`
+and only pawns for everyone else.
 
 ```gdscript
 class_name NetworkedPlayer
@@ -80,12 +78,23 @@ func _physics_process(delta: float) -> void:
 	pawn.synced_crouched = crouched
 ```
 
-Skip `super(delta)` and the base controller never runs. `synced_movement_state` and `synced_game_state` are plain `int` on `SUCCPawn` rather than the `MovementState`/`GameState` enums, because replicated properties are transported as primitives.
+Call `super(delta)` first, or the base controller never runs.
 
-## Integrations
+## Add your own synced fields
 
-- **ENet** - works out of the box.
-- **GodotSteam** (`SteamMultiplayerPeer`) - works; SUCC has no Steam-specific code.
-- **WebRTC / WebSocket** - works.
+On your subclass pawn scene:
 
-SUCC deliberately ships no lobby, matchmaking, or transport code. Those are the consuming game's responsibility.
+1. Add properties to your `SUCCPawn` subclass, such as
+   `@export var synced_health: int = 100`.
+2. Open the `MultiplayerSynchronizer` node's **Replication** panel.
+3. Add `./synced_health` and pick a replication mode, always or on change.
+
+## What SUCC leaves to you
+
+The addon ships no lobby, matchmaking or transport code, and none is planned. Those
+belong in your game.
+
+## Next steps
+
+- [SUCCPawn reference](../reference/succ_pawn.md) for the full synced property list.
+- [Extend SUCC for your game](extend-succ.md) for the subclassing pattern.

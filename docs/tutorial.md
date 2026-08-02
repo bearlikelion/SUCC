@@ -56,20 +56,21 @@ SUCC ships with a test level that exercises every movement feature. Open
 You spawn on the yellow pad. Six lanes run away from you, each testing a different
 thing:
 
-- **Stairs** (far left, tan), walk and sprint both up and down. The first-person camera
-  and third-person model should trace a smooth grade rather than snapping to each tread.
-- **Slants** (green), three ramps at 15°, 30° and 44°. All three are walkable.
-- **Bunnyhop blocks** (orange, centre), hold **Space** while running along them.
-  Holding jump is enough; you don't need to tap it.
-- **Crouch corridor** (purple), walk into it standing and you stop. Hold **Ctrl** and
-  you fit. The default SurfsUp preset eases the grounded camera; Quake-style presets can
-  snap it instead.
-- **Surf ramp** (blue), the steep peak. Walk up the yellow ramp to the top, drop onto
-  one of the sloped faces, and hold a strafe key into the slope.
+- **Stairs** (far left, tan), walk and sprint up and down. The camera and model should
+  trace a smooth grade rather than snapping to each tread.
+- **Slants** (green), three walkable ramps at 15°, 30° and 44°.
+- **Bunnyhop blocks** (orange, centre), hold **Space** while running. Holding is
+  enough; you don't need to tap it.
+- **Crouch corridor** (purple), walk in standing and you stop. Hold **Ctrl** and you fit.
+- **Surf ramp** (blue), the steep peak. Climb the yellow ramp, drop onto a sloped face,
+  and hold a strafe key into the slope.
 - **Slide** (far right), a 40° chute you slide down.
 
 The number under the crosshair is your speed, shown twice: engine units per second on
 top, metres per second below. Source players think in units; Godot thinks in metres.
+
+[The demo gym](explanation/demo-level.md) covers what each lane tests and why it's
+sized the way it is.
 
 ## Step 5: switch engines
 

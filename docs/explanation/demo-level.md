@@ -43,9 +43,9 @@ movement feature, built from untextured CSG boxes.
 
 Five steps of 12 units (0.305 m) each, rising to a landing at 1.77 m.
 
-Twelve units is two-thirds of the 18-unit step limit every one of these engines uses. At
-16 units the flight still works but feels like wading, because you're brushing the limit
-on every step. Walking up here should be smooth. If it stutters, the
+Twelve units is two-thirds of the 18-unit step limit these engines share, which is
+comfortable; at 16 the climb works but feels like wading. Walking up should be smooth,
+and a stutter means the
 [step handling](movement.md#why-stairs-need-special-handling) is broken.
 
 To the right sits a lone **20-unit step (0.508 m)**, just above the limit. You cannot walk
@@ -112,19 +112,17 @@ permanently airborne on them, which is exactly what
 [makes surfing work](movement.md#why-surfing-works). Climb the yellow staircase on the
 left to the launch platform, drop onto either face, and hold a strafe key into the slope.
 
-The staircase is 22 steps of 16-unit risers with **40-unit (1.016 m) treads**. The tread
-depth matters as much as the riser height: the player hull is 32 units deep, so a
-narrower tread leaves the body straddling two risers at once and the step-up logic
-thrashes. At 40 units there is 25% clearance and the climb is smooth.
+The staircase is 22 steps of 16-unit risers with **40-unit (1.016 m) treads**. Tread
+depth matters as much as riser height: the player hull is 32 units deep, so a narrower
+tread leaves the body straddling two risers and the step-up logic thrashes.
 
-The peak shape is what real surf maps use. On a peak you ride the outer face with open
-floor beside you, so easing off the strafe key drops you off the side. A valley would
-funnel you into the bottom and hold you there.
+Real surf maps use a peak rather than a valley. On a peak you ride the outer face with
+open floor beside you, so easing off the strafe key drops you off the side; a valley
+would funnel you to the bottom and hold you there.
 
-Size matters as much as shape. The Momentum guide warns that "people may find themselves
-sliding off the bottoms of small ramps", and an undersized ramp gives you no time to
-build speed before you reach the floor. At 400 u/s you cross a spec-width ramp in about
-2.4 seconds, against under a second on a ramp a third of that size.
+Size matters too. An undersized ramp gives you no time to build speed before you reach
+the floor. At 400 u/s a spec-width ramp takes about 2.4 seconds to cross, against under
+a second on a ramp a third of that size.
 
 ## Slide
 

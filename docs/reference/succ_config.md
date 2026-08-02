@@ -43,6 +43,8 @@ config.max_speed = SUCCConfig.source_units(320.0)   # 8.128 m/s
 |---|---|---|---|
 | `air_acceleration` | `float` | `100.0` | Air-strafe accel. Values ≥100 enable momentum gains. |
 | `max_air_speed` | `float` | `0.762` | Per-frame air-accel speed cap. |
+| `max_velocity` | `float` | `88.9` | Per-axis speed ceiling in m/s (`sv_maxvelocity`, 3500u). Only applied when `enforce_max_velocity` is true. |
+| `enforce_max_velocity` | `bool` | `false` | Clamp each velocity axis to `max_velocity`. Source enforces this; surf and bhop usually leave it off so speed can climb freely. |
 
 ## Speed Modifiers
 
@@ -72,6 +74,20 @@ config.max_speed = SUCCConfig.source_units(320.0)   # 8.128 m/s
 | `third_person_distance` | `float` | `2.0` | Spring arm length in 3rd person. |
 | `smooth_vertical_step` | `bool` | `true` | Render-smooth the camera and model over step-up/down snaps. |
 | `step_smoothing_speed` | `float` | `3.81` | Fallback stair catch-up rate near zero speed, in m/s. |
+
+## Head Bob & Tilt
+
+Cosmetic and first-person only. Every engine ships different values; see
+[Preset values](presets.md).
+
+| Name | Type | Default | Description |
+|---|---|---|---|
+| `bob_amount` | `float` | `0.01` | Bob amplitude per unit of speed (`cl_bob`). Set `0.0` to disable. |
+| `bob_cycle` | `float` | `0.8` | Seconds per full bob cycle (`cl_bobcycle`). |
+| `bob_up` | `float` | `0.5` | Fraction of the cycle spent moving up (`cl_bobup`). |
+| `bob_max` | `float` | `0.102` | Ceiling on the bob offset in metres. |
+| `tilt_angle` | `float` | `2.0` | Max view roll in degrees when strafing (`cl_rollangle`). Set `0.0` to disable. |
+| `tilt_speed` | `float` | `5.08` | Sideways speed at which tilt maxes out (`cl_rollspeed`, 200u). |
 
 ## Mouse
 

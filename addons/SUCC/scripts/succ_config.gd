@@ -1,8 +1,7 @@
 class_name SUCCConfig
 extends Resource
 
-# Physics and feel tuning for a SUCC character.
-# Defaults are Source-engine-inspired; see source_units() for the unit conversion.
+# Physics and feel tuning for a SUCC character. Defaults are Source-inspired.
 
 const SOURCE_MULT: float = 39.37
 
@@ -15,56 +14,52 @@ enum CrouchTransitionMode {
 
 @export_group("Gravity & Jump")
 
-## Downward acceleration applied to the character in m/s^2.
-## Lower values produce floatier movement (e.g. moon gravity).
+## Downward acceleration in m/s^2. Lower values feel floatier.
 @export var gravity: float = 20.32
 
-## Apex height of a standing jump in metres.
-## The actual jump impulse is derived from this and [member gravity].
+## Apex height of a standing jump in metres. The impulse derives from this
+## and [member gravity].
 @export var jump_height: float = 1.143
 
 ## When true, holding jump queues a fresh jump on the next landing frame,
-## enabling bunnyhop chains without pixel-perfect timing.
+## so bunnyhop chains need no pixel-perfect timing.
 @export var bhop_buffered_jump: bool = true
 
 
 @export_group("Ground Movement")
 
-## Ground acceleration coefficient. Higher values reach [member max_speed] faster.
-## Source default is 10 for sv_accelerate.
+## Ground acceleration coefficient (sv_accelerate). Higher reaches
+## [member max_speed] faster. Source default 10.
 @export var acceleration: float = 7.5
 
-## Ground friction coefficient. Higher values decelerate the character faster when
-## no input is given. Source default is 4.0 for sv_friction.
+## Ground friction coefficient (sv_friction). Source default 4.0.
 @export var friction: float = 4.0
 
-## Floor on the value friction is computed from, so slow movement still decelerates
-## at a fixed rate instead of tapering off asymptotically. Source default is 100
-## units (2.54 m) for sv_stopspeed.
+## Floor on the value friction is computed from, so slow movement still stops
+## instead of tapering off (sv_stopspeed). Source default 100u (2.54 m).
 @export var stop_speed: float = 4.0
 
-## Maximum ground speed in m/s before walking. Sprinting multiplies this
-## by [member sprint_speed_modifier].
+## Maximum ground speed in m/s. Sprinting multiplies this by
+## [member sprint_speed_modifier].
 @export var max_speed: float = 10.16
 
 
 @export_group("Air Movement")
 
-## Air acceleration coefficient. Values >= 100 enable classic Quake/Source
-## air-strafe momentum gains (the core of bhop and surf).
+## Air acceleration coefficient. Values >= 100 give classic Quake/Source
+## air-strafe momentum gains, the core of bhop and surf.
 @export var air_acceleration: float = 100.0
 
-## Per-frame cap on how much velocity the air accelerate burst can add (m/s).
-## Source default is 30 Hammer units (≈ 0.762 m). This is what makes air strafing
-## work: small deltas per frame that accumulate into large directional turns.
+## Per-frame cap on the air accelerate burst (m/s). Source ships 30u (0.762 m);
+## the small per-frame deltas are what make air strafing work.
 @export var max_air_speed: float = 0.762
 
-## Hard ceiling on speed per axis in m/s, as sv_maxvelocity. Source ships 3500
-## units (88.9 m). Only applied when [member enforce_max_velocity] is true.
+## Per-axis speed ceiling in m/s (sv_maxvelocity). Source ships 3500u.
+## Applied only when [member enforce_max_velocity] is true.
 @export var max_velocity: float = 88.9
 
-## When true, clamp each velocity axis to [member max_velocity]. Source enforces
-## this; surf and bhop modes usually leave it off so speed can climb freely.
+## When true, clamp each velocity axis to [member max_velocity]. Surf and bhop
+## modes usually leave it off so speed can climb freely.
 @export var enforce_max_velocity: bool = false
 
 
@@ -82,17 +77,14 @@ enum CrouchTransitionMode {
 ## Total height of the character's collision shape while standing (m).
 @export var stand_height: float = 1.829
 
-## Total height of the character's collision shape while crouched (m).
-## The controller tweens between this and [member stand_height].
+## Crouched collision height (m). The controller tweens between this and
+## [member stand_height].
 @export var crouch_height: float = 0.914
 
-## Width (diameter) of the character's collision shape (m).
-## For capsule/cylinder colliders this is 2 * radius.
+## Collider width in metres, so 2 * radius for a capsule or cylinder.
 @export var width: float = 0.813
 
-## Maximum vertical step the character can climb in a single move without
-## needing to jump. Raising this helps clear taller ledges; too high produces
-## climbing-up-walls artifacts.
+## Tallest step climbable without jumping. Too high and the body climbs walls.
 @export var step_height: float = 0.45 :
 	set(val):
 		if step_height != val:
@@ -121,53 +113,46 @@ enum CrouchTransitionMode {
 ## Length of the SpringArm3D when the camera is in third-person mode (m).
 @export var third_person_distance: float = 2.0
 
-## When true, the camera lags briefly behind sudden vertical body snaps
-## (stepping up stairs or snapping down onto a lower surface) so stair
-## traversal feels smooth instead of teleporty. Disable for a rigid feel.
+## When true, the camera lags briefly behind vertical body snaps so stairs feel
+## smooth instead of teleporty. Disable for a rigid feel.
 @export var smooth_vertical_step: bool = true
 
-## Fallback camera smoothing rate when horizontal traversal speed is near zero.
-## Moving stair traversal derives its rate from speed and the latest step rise.
+## Fallback smoothing rate when horizontal speed is near zero; moving traversal
+## derives its rate from speed and the latest step rise.
 @export_range(0.5, 20.0) var step_smoothing_speed: float = 3.81
 
 
 @export_group("Head Bob & Tilt")
 
-## Vertical head bob amplitude per unit of horizontal speed, as cl_bob.
-## Quake uses 0.02, Half-Life 0.01, Source 0.002. Set to 0.0 to disable.
+## Bob amplitude per unit of horizontal speed (cl_bob). Quake 0.02,
+## Half-Life 0.01, Source 0.002. Set 0.0 to disable.
 @export_range(0.0, 0.05, 0.001) var bob_amount: float = 0.01
 
-## Seconds for one full bob cycle, as cl_bobcycle. Quake uses 0.6,
-## Half-Life and Source 0.8. Lower values bob faster.
+## Seconds per bob cycle (cl_bobcycle). Quake 0.6, Half-Life and Source 0.8.
 @export_range(0.1, 2.0, 0.05) var bob_cycle: float = 0.8
 
-## Fraction of the cycle spent moving up, as cl_bobup. 0.5 is symmetric;
-## every engine ships 0.5.
+## Fraction of the cycle spent moving up (cl_bobup). Every engine ships 0.5.
 @export_range(0.1, 0.9, 0.05) var bob_up: float = 0.5
 
-## Ceiling on the bob offset in metres, so sprinting does not swing the view
-## wildly. Quake clamps the raw bob to 4 units up and 7 down.
+## Ceiling on the bob offset in metres, so sprinting cannot swing the view wildly.
 @export_range(0.0, 0.5, 0.005) var bob_max: float = 0.102
 
-## Maximum view roll in degrees when strafing, as cl_rollangle / sv_rollangle.
-## Quake, Half-Life and Quake 2 use 2.0; Source ships 0, i.e. no tilt.
-## Set to 0.0 to disable.
+## Max view roll in degrees when strafing (cl_rollangle). Quake, Half-Life and
+## Quake 2 use 2.0; Source ships 0. Set 0.0 to disable.
 @export_range(0.0, 15.0, 0.1) var tilt_angle: float = 2.0
 
-## Sideways speed in m/s at which the tilt reaches [member tilt_angle], as
-## cl_rollspeed. Every engine uses 200 units (5.08 m/s).
+## Sideways speed at which tilt reaches [member tilt_angle] (cl_rollspeed).
+## Every engine uses 200u (5.08 m/s).
 @export_range(0.5, 20.0, 0.1) var tilt_speed: float = 5.08
 
 
 @export_group("Mouse")
 
-## Sensitivity multiplier applied to raw mouse motion before conversion.
-## Expose this to players as the in-game sensitivity slider.
+## Sensitivity multiplier on raw mouse motion. Expose as the in-game slider.
 @export var mouse_sensitivity: float = 3.0
 
-## Source-engine mouse scale: degrees of view rotation per mouse "unit".
-## 0.022 is the Source default and makes sensitivity values portable from
-## CS:GO / TF2 / Half-Life muscle memory.
+## Degrees of view rotation per mouse unit. The Source default 0.022 keeps
+## sensitivity values portable from CS:GO / TF2 / Half-Life.
 @export var degrees_per_unit: float = 0.022
 
 

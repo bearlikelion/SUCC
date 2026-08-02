@@ -1,10 +1,8 @@
 class_name SUCCCamera
 extends SpringArm3D
 
-# Camera rig for SUCC. Wraps a SpringArm3D + Camera3D.
-# First-person = spring_length 0, player model hidden.
-# Third-person = spring_length from config.third_person_distance, player model visible.
-# Mouse look rotates the owner SUCC around Y (yaw) and this node around X (pitch).
+# Camera rig for SUCC, wrapping a SpringArm3D and Camera3D.
+# Mouse look yaws the owner SUCC around Y and pitches this node around X.
 
 
 # SUCC.camera_mode_changed fires for the same transition; connect either, not both.
@@ -26,9 +24,8 @@ var _bob_offset: float = 0.0
 var _bob_time: float = 0.0
 
 @onready var camera: Camera3D = _find_camera()
-# Eye height before bob and step offsets. SUCC writes view_height rather than
-# position.y directly, because a SpringArm3D overwrites its child camera's
-# transform every frame; the offsets have to move the arm itself.
+# Eye height before bob and step offsets. A SpringArm3D overwrites its child
+# camera's transform every frame, so the offsets have to move the arm itself.
 @onready var view_height: float = position.y:
 	set(value):
 		view_height = value
@@ -55,8 +52,7 @@ func set_physics_offset(offset: Vector3) -> void:
 	_apply_offsets()
 
 
-# Quake V_CalcBob: a sine over a fixed cycle, scaled by horizontal speed, with the
-# upstroke and downstroke able to take different fractions of the cycle.
+# Quake V_CalcBob: a sine over a fixed cycle, scaled by horizontal speed.
 func update_bob(delta: float, horizontal_speed: float, grounded: bool,
 		config: SUCCConfig) -> void:
 	if config.bob_amount <= 0.0:
@@ -85,8 +81,7 @@ func update_bob(delta: float, horizontal_speed: float, grounded: bool,
 
 
 # Quake V_CalcRoll: tilt proportional to sideways velocity, capped at tilt_angle.
-# A positive rotation.z leans the view left in Godot, so strafing right (positive
-# sideways velocity) needs a negative angle to lean the view into the movement.
+# Positive rotation.z leans left, so strafing right needs a negative angle.
 func update_tilt(delta: float, velocity: Vector3, config: SUCCConfig) -> void:
 	if config.tilt_angle <= 0.0:
 		if not is_zero_approx(rotation.z):
@@ -116,8 +111,7 @@ func handle_input(event: InputEvent, config: SUCCConfig) -> void:
 		return
 	var motion: InputEventMouseMotion = event
 	# screen_relative skips the content scale factor, so sensitivity does not shift
-	# with window size. relative also picks up a rightward drift under Firefox's
-	# pointer lock on the web export.
+	# with window size; relative also drifts right under Firefox pointer lock.
 	var relative: Vector2 = motion.screen_relative
 	relative *= config.mouse_sensitivity * deg_to_rad(config.degrees_per_unit)
 	_accumulated += relative

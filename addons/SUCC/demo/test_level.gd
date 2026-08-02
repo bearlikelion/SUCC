@@ -1,8 +1,7 @@
 class_name SUCCTestLevel
 extends Node3D
 
-# Parkour gym for standalone SUCC testing.
-# Number keys swap movement presets; the speedometer reads in both m/s and engine units.
+# Parkour gym for standalone SUCC testing; number keys swap movement presets.
 
 
 const SPAWN_POSITION: Vector3 = Vector3(8.0, 1.0, 24.0)
@@ -131,7 +130,7 @@ func _build_hint() -> String:
 	return " | ".join(parts) + "\n1-5 swap movement preset"
 
 
-# If forward/left/back/right bind to W/A/S/D, show "WASD". Otherwise list the individual keys.
+# Collapses to "WASD" when the movement actions bind to those keys.
 func _movement_label() -> String:
 	var order: Array[String] = ["forward", "left", "back", "right"]
 	var keys: PackedStringArray = []

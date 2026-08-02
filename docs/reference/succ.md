@@ -12,12 +12,17 @@ The main controller. Extend this class for your game's player.
 | `enable_surf` | `bool` | Project air acceleration along surf ramps. Default `true`. |
 | `default_camera_mode` | `CameraMode` | Starting camera mode (`FIRST_PERSON` / `THIRD_PERSON`). |
 | `visual_root_path` | `NodePath` | Optional model pivot that receives render-smoothed stair offsets. Keep collision outside it. |
+| `ramp_angle_threshold` | `float` | Slope angle at or above which a walkable floor counts as a ramp. Default 45°. |
+| `max_floor_angle` | `float` | Steepest slope the body can stand on. Steeper surfaces leave it airborne, which is what makes surfing work. Default 50°. |
+
+Both angle properties are shown in degrees in the Inspector and stored in radians.
+Setting `max_floor_angle` also updates Godot's built-in `floor_max_angle`.
 
 ## Enums
 
 - `CameraMode { FIRST_PERSON, THIRD_PERSON }`
 - `FloorType { NONE, FLOOR, RAMP }`
-- `MovementState { IDLE, WALKING, SPRINTING, CROUCHING, DUCKING, JUMPING, FALLING, AIR }`
+- `MovementState { IDLE, WALKING, SPRINTING, CROUCHING, JUMPING, FALLING, AIR }`
 - `GameState { ACTIVE, FROZEN, DISABLED }`
 
 ## State (read-only in most cases)
@@ -32,18 +37,18 @@ The main controller. Extend this class for your game's player.
 
 ## Signals
 
-- `movement_state_changed(old: int, new: int)`
-- `game_state_changed(old: int, new: int)`
+- `movement_state_changed(old_state: MovementState, new_state: MovementState)`
+- `game_state_changed(old_state: GameState, new_state: GameState)`
 - `jumped`
 - `landed(fall_velocity: float)`
-- `camera_mode_changed(mode: int)`
+- `camera_mode_changed(mode: CameraMode)`
 
 ## Methods
 
-### `set_game_state(new_state: int) -> void`
+### `set_game_state(new_state: GameState) -> void`
 Change the game state; fires `game_state_changed` and calls `_on_game_state_changed`.
 
-### `toggle_camera_mode() -> void` / `set_camera_mode(mode: int) -> void`
+### `toggle_camera_mode() -> void` / `set_camera_mode(mode: CameraMode) -> void`
 Switch between first- and third-person.
 
 ## Overridable hooks
