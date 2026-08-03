@@ -122,8 +122,13 @@ func _apply_rotation() -> void:
 	var body: Node3D = yaw_target if yaw_target else get_parent() as Node3D
 	if body == null:
 		return
-	body.rotate_object_local(Vector3.DOWN, _accumulated.x)
-	body.orthonormalize()
+
+	if body is SUCC and body.config.left_right_steer:
+		rotate_object_local(Vector3.DOWN, _accumulated.x)
+		orthonormalize()
+	else:
+		body.rotate_object_local(Vector3.DOWN, _accumulated.x)
+		body.orthonormalize()
 
 	var invert: float = -1.0 if invert_mouse_y else 1.0
 	rotate_object_local(Vector3.RIGHT, invert * -_accumulated.y)
