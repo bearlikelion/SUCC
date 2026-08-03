@@ -93,6 +93,9 @@ var _current_physics_position: Vector3 = Vector3.ZERO
 var _manual_camera_interpolation: bool = false
 var _clearance_shape: BoxShape3D = BoxShape3D.new()
 var _clearance_params: PhysicsShapeQueryParameters3D = PhysicsShapeQueryParameters3D.new()
+var _turn_velocity: float = 0.0
+var _turn_input: float = 0.0
+var _turn_acceleration: float = 0.0
 
 @onready var collision: CollisionShape3D = get_node_or_null("Collision")
 @onready var camera_rig: SUCCCamera = get_node_or_null("CameraRig")
@@ -186,7 +189,11 @@ func _gather_movement_input() -> void:
 	var back: float = _action_strength("back")
 	var left: float = _action_strength("left")
 	var right: float = _action_strength("right")
-	move_input = Vector2(right - left, back - fwd).normalized()
+	if config.left_right_steer:
+		move_input = Vector2(0, back - fwd).normalized()
+		_turn_input = right - left
+	else:
+		move_input = Vector2(right - left, back - fwd).normalized()
 
 	wish_sprint = _action_pressed("sprint")
 	var buffered: bool = enable_bhop and config.bhop_buffered_jump
@@ -308,8 +315,14 @@ func _set_velocity(delta: float) -> void:
 		_friction(delta, 1.0)
 		_accelerate(delta, move_dir)
 
+	if config.left_right_steer:
+		_rotate_accelerate(delta)
+
 
 func _friction(delta: float, strength: float) -> void:
+	if is_on_floor() and config.left_right_steer:
+		_turn_velocity *= config.friction * strength * delta
+
 	# Horizontal speed only; a 3D length would inflate drop while falling.
 	var temp_speed: float = Vector3(velocity.x, 0.0, velocity.z).length()
 	if temp_speed <= 0.0:
@@ -338,6 +351,9 @@ func _accelerate(delta: float, wish_dir: Vector3) -> void:
 		accel_speed = add_speed
 	velocity += accel_speed * wish_dir
 
+func _rotate_accelerate(delta: float) -> void:
+	_turn_acceleration = min(10, _turn_input * config.rotation_acceleration * config.left_right_steer_speed * delta)
+	_turn_velocity += _turn_acceleration
 
 func _air_accelerate(delta: float, wish_dir: Vector3) -> void:
 	var wish_speed: float = wish_dir.length()
@@ -403,6 +419,11 @@ func _move_body(delta: float) -> void:
 	if not grounded:
 		_air_step_up(delta)
 
+	if config.left_right_steer:
+		print(_turn_acceleration)
+		print(_turn_velocity)
+		rotate_object_local(-global_basis.y, deg_to_rad(_turn_velocity))
+		orthonormalize()
 	move_and_slide()
 	_clip_velocity_to_contacts()
 	var flat_pos: Vector3 = global_position

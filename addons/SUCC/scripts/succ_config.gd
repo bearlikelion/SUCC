@@ -11,6 +11,11 @@ enum CrouchTransitionMode {
 	SNAP,
 }
 
+@export_group("Control Options")
+
+## Steer with left and right instead of look direction
+@export var left_right_steer := false
+@export var left_right_steer_speed := 10
 
 @export_group("Gravity & Jump")
 
@@ -35,6 +40,10 @@ enum CrouchTransitionMode {
 ## Ground friction coefficient (sv_friction). Source default 4.0.
 @export var friction: float = 4.0
 
+## Rotation acceleration coefficient for use with left/right move. Higher values reach [member max_speed] faster.
+## Source default is 10 for sv_accelerate.
+@export var rotation_acceleration: float = 1
+
 ## Floor on the value friction is computed from, so slow movement still stops
 ## instead of tapering off (sv_stopspeed). Source default 100u (2.54 m).
 @export var stop_speed: float = 4.0
@@ -57,6 +66,9 @@ enum CrouchTransitionMode {
 ## Per-axis speed ceiling in m/s (sv_maxvelocity). Source ships 3500u.
 ## Applied only when [member enforce_max_velocity] is true.
 @export var max_velocity: float = 88.9
+
+## Hard ceiling on the rotational speed when using left/right turn
+@export var max_turn_velocity: float = 10.0
 
 ## When true, clamp each velocity axis to [member max_velocity]. Surf and bhop
 ## modes usually leave it off so speed can climb freely.
