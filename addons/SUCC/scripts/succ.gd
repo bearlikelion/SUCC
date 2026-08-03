@@ -119,20 +119,25 @@ func _ready() -> void:
 	if visual_root:
 		_visual_root_base_y = visual_root.position.y
 	apply_config()
-	if camera_rig:
-		camera_rig.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-	if visual_root:
-		visual_root.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-	_manual_camera_interpolation = not bool(
-		ProjectSettings.get_setting("physics/common/physics_interpolation", false)
-	)
-	_reset_manual_camera_interpolation()
-	# No user gesture has happened yet on web, so capturing here is rejected and
-	# Firefox never recovers. The first click captures instead.
-	if OS.has_feature("web"):
-		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+
+	if is_multiplayer_authority():
+		if camera_rig:
+			camera_rig.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+		if visual_root:
+			visual_root.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+		_manual_camera_interpolation = not bool(
+			ProjectSettings.get_setting("physics/common/physics_interpolation", false)
+		)
+		_reset_manual_camera_interpolation()
+		# No user gesture has happened yet on web, so capturing here is rejected and
+		# Firefox never recovers. The first click captures instead.
+		if OS.has_feature("web"):
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		else:
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	else:
-		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		if camera_rig:
+			camera_rig.camera.current = false
 
 
 # Call after swapping config.
