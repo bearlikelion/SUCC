@@ -4,8 +4,21 @@ All notable changes to SUCC are documented here. Format follows [Keep a Changelo
 
 ## [Unreleased]
 
+### Added
+
+- Server-authoritative movement seams for dedicated servers and client prediction.
+  Set `command` to a `SUCCInput` and the tick reads it instead of `Input`; `read_local_input()` builds one from the local player.
+- `simulate(delta)` runs one tick and can be called directly to replay commands.
+  `_physics_process` calls it when the new `_is_simulating()` hook returns true.
+- `get_move_state()` and `set_move_state()` capture and restore a `SUCCMoveState`, so a client can rewind to a server state and replay its pending commands.
+- `add_impulse()` queues knockback for the next tick, and `teleport()` moves the body and resets camera interpolation.
+- `_is_local_viewer()` decides which instance takes mouse look and captures the mouse.
+- Headless replay determinism test in `tests/`, run with `tests/run_tests.sh`.
+
 ### Changed
 
+- A SUCC without a `CameraRig` only reports it when `_is_local_viewer()` is true, so a server's copy of a player runs without errors.
+- Non-authority instances no longer capture the mouse in `_ready()`.
 - Surf ramps are always airborne: they report `FALLING` and ignore jump input until the
   player reaches a walkable floor. `enable_surf` now controls ramp-aligned air
   acceleration.
@@ -17,6 +30,10 @@ All notable changes to SUCC are documented here. Format follows [Keep a Changelo
 
 - `SUCCConfig.surf_jump_retention`, because jumping from a surf ramp is no longer
   supported.
+
+### Fixed
+
+- Each SUCC now owns its collision shape, so crouching one character no longer resizes every other instance of the same scene.
 
 ## [0.1.1] - 2026-07-26
 
