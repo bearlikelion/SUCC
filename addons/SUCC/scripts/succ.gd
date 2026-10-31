@@ -778,6 +778,10 @@ func _apply_render_offsets() -> void:
 	var fraction: float = Engine.get_physics_interpolation_fraction()
 	if camera_rig:
 		var physics_offset: Vector3 = Vector3.ZERO
+		# A body moved outside simulate, as a snapshot moves a remote player, has no step to blend
+		if _manual_camera_interpolation \
+		and not global_position.is_equal_approx(_current_physics_position):
+			_reset_manual_camera_interpolation()
 		if _manual_camera_interpolation:
 			var render_position: Vector3 = _previous_physics_position.lerp(
 				_current_physics_position,
