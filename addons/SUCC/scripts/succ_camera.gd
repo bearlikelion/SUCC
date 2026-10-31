@@ -118,6 +118,12 @@ func handle_input(event: InputEvent, config: SUCCConfig) -> void:
 	_apply_rotation()
 
 
+## Turns the view by radians as mouse motion does, for look sources such as a gamepad stick
+func turn(radians: Vector2) -> void:
+	_accumulated += radians
+	_apply_rotation()
+
+
 func _apply_rotation() -> void:
 	var body: Node3D = yaw_target if yaw_target else get_parent() as Node3D
 	if body == null:

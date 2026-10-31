@@ -28,8 +28,12 @@ func spawn_player(peer_id: int) -> SUCC:
 	return player
 ```
 
-When `is_multiplayer_authority()` returns `false`, SUCC skips input gathering and
-physics entirely, so the instance goes inert.
+Two overridable checks decide what an instance does, and both default to `is_multiplayer_authority()`:
+
+- `_is_simulating()` runs the movement tick in `_physics_process`.
+- `_is_local_viewer()` takes mouse look and captures the mouse.
+
+Left alone, a non-authority instance skips input and physics entirely, so it goes inert.
 
 ## Spawn a pawn for each remote player
 
@@ -79,6 +83,93 @@ func _physics_process(delta: float) -> void:
 ```
 
 Call `super(delta)` first, or the base controller never runs.
+
+## Run the movement on a dedicated server
+
+The owner-authoritative setup above trusts each client with its own position.
+For a server-authoritative game, the server simulates every player from the inputs clients send, and the owning client predicts its own player so movement still feels instant.
+SUCC provides the pieces; the transport, tick numbering and RPCs stay in your game.
+
+| Piece | Use |
+|---|---|
+| `command: SUCCInput` | When set, the tick reads it instead of `Input`. |
+| `read_local_input() -> SUCCInput` | The owning client's input and view angles for this tick. |
+| `simulate(delta)` | One tick. Call it directly to replay. |
+| `get_move_state()` / `set_move_state(state)` | Rewind to a server state before replaying. |
+| `add_impulse(impulse)` / `teleport(transform)` | Knockback and respawns that stay deterministic. |
+
+The server's copy of a player needs no `CameraRig`.
+Without one SUCC skips the camera work, logs nothing and simulates as normal.
+
+### The server copy
+
+Keep the client as the multiplayer authority so `_is_local_viewer()` stays false on the server, and make the server simulate:
+
+```gdscript
+class_name ServerPlayer
+extends SUCC
+
+
+func _is_simulating() -> bool:
+	return multiplayer.is_server()
+
+
+# Your RPC handler calls this with the client's command for the next tick.
+func receive_command(input: SUCCInput) -> void:
+	command = input
+```
+
+Validate commands at your trust boundary before assigning them, for example one per tick per player.
+SUCC already ignores non-finite values and normalizes `move`, so a client cannot run faster by sending a longer vector.
+
+### Prediction and reconciliation on the owning client
+
+The client simulates its own command at once, keeps it by tick number, and when the server's state for an older tick arrives, rewinds to it and replays the newer commands:
+
+```gdscript
+class_name PredictedPlayer
+extends SUCC
+
+var _tick: int = 0
+var _pending: Dictionary[int, SUCCInput] = {}
+var _server_tick: int = -1
+var _server_state: SUCCMoveState
+
+
+func _physics_process(delta: float) -> void:
+	if _server_state:
+		_reconcile(delta)
+	command = read_local_input()
+	_pending[_tick] = command
+	# Send _tick and command to the server with your own RPC here.
+	super(delta)
+	_tick += 1
+
+
+# Your RPC handler calls this with the server's state after it simulated server_tick.
+func receive_server_state(server_tick: int, state: SUCCMoveState) -> void:
+	_server_tick = server_tick
+	_server_state = state
+
+
+func _reconcile(delta: float) -> void:
+	set_move_state(_server_state)
+	_server_state = null
+	for tick: int in range(_server_tick + 1, _tick):
+		command = _pending[tick]
+		simulate(delta)
+	for tick: int in _pending.keys():
+		if tick <= _server_tick:
+			_pending.erase(tick)
+```
+
+Things to know when replaying:
+
+- Call `simulate()` from `_physics_process` with the physics step. `move_and_slide()` reads the engine's step, not the argument, so replaying from an RPC callback or `_process` drifts.
+- `jumped`, `landed` and `movement_state_changed` fire again for replayed ticks. Set a flag around the replay loop if a sound or effect should play once.
+- An impulse the client predicts, such as its own rocket jump, has to be queued again at the same tick during the replay. Impulses the server applies arrive in the server state.
+- Camera offsets are not part of the state, so the view eases from where it is instead of snapping on every correction.
+- Pack the `SUCCMoveState` fields you need into your own RPC; it is a `RefCounted` and does not serialize on its own.
 
 ## Add your own synced fields
 
