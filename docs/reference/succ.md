@@ -105,7 +105,7 @@ A `RefCounted` holding one tick of player intent.
 | `crouch` | `bool` | Held this tick. |
 | `sprint` | `bool` | Held this tick. |
 | `yaw` | `float` | Body `rotation.y` in radians. |
-| `pitch` | `float` | Camera rig `rotation.x` in radians. Ignored without a `CameraRig`. |
+| `pitch` | `float` | Camera rig `pitch` in radians. Ignored without a `CameraRig`. |
 
 Non-finite `move`, `yaw` or `pitch` values are ignored, since commands can come off the network.
 

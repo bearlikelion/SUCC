@@ -4,6 +4,8 @@ All notable changes to SUCC are documented here. Format follows [Keep a Changelo
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-31
+
 ### Added
 
 - Server-authoritative movement seams for dedicated servers and client prediction.
@@ -22,9 +24,9 @@ All notable changes to SUCC are documented here. Format follows [Keep a Changelo
 - Surf ramps are always airborne: they report `FALLING` and ignore jump input until the
   player reaches a walkable floor. `enable_surf` now controls ramp-aligned air
   acceleration.
-- Camera translation now interpolates the controller's fixed-tick positions locally when
-  project-wide physics interpolation is disabled. Mouse look remains render-rate
-  responsive.
+- The `CameraRig` and `visual_root` are now `top_level`, placed every frame from the body's interpolated tick positions, whether or not project-wide physics interpolation is on.
+  The view and model no longer jitter or trail the body with physics interpolation enabled, and mouse look stays render-rate responsive.
+- Pitch lives in `SUCCCamera.pitch`; set that instead of the rig's `rotation.x`.
 
 ### Removed
 
@@ -33,6 +35,8 @@ All notable changes to SUCC are documented here. Format follows [Keep a Changelo
 
 ### Fixed
 
+- Looking straight up or down with view tilt on (the Quake preset) no longer flips the view and reverses WASD ([#6](https://github.com/bearlikelion/SUCC/issues/6)).
+- Walking up stairs while pressed against a wall no longer stops the player at the first riser ([#5](https://github.com/bearlikelion/SUCC/issues/5)).
 - Each SUCC now owns its collision shape, so crouching one character no longer resizes every other instance of the same scene.
 
 ## [0.1.1] - 2026-07-26
@@ -114,6 +118,7 @@ Most of these were found by running the movement against the original engine sou
 - **Camera offsets never reached the screen.** Step smoothing wrote `camera.position.y`, but the camera is a child of a `SpringArm3D`, which overwrites its child's transform every frame. Offsets now move the arm itself through a `view_height` property, so stair smoothing works for the first time, and head bob works at all.
 - `_has_clearance()` allocated a shape and query parameters on every call.
 
-[Unreleased]: https://github.com/bearlikelion/SUCC/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/bearlikelion/SUCC/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/bearlikelion/SUCC/compare/v0.1.7...v0.2.0
 [0.1.1]: https://github.com/bearlikelion/SUCC/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/bearlikelion/SUCC/releases/tag/v0.1.0

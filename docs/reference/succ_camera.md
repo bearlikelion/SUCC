@@ -1,6 +1,13 @@
 # `class_name SUCCCamera extends SpringArm3D`
 
 Camera rig used by `SUCC`. Handles mouse look (yaw rotates the parent `SUCC`; pitch rotates this node) and first/third-person switching via `spring_length`.
+The rig is `top_level`: the owning `SUCC` places it every frame from its interpolated position, so do not move it yourself.
+
+## Properties
+
+| Name | Type | Description |
+|---|---|---|
+| `pitch` | `float` | View pitch in radians, clamped to `PITCH_LIMIT_DEG`. Set this rather than `rotation.x`, which is overwritten every frame. |
 
 ## Exports
 
@@ -18,6 +25,12 @@ hide or show the player model.
 other, not both.
 
 ## Methods
+
+### `turn(radians: Vector2) -> void`
+Turns the view by radians as mouse motion does, for look sources such as a gamepad stick.
+
+### `place(origin: Vector3, yaw: float) -> void`
+Moves the rig to eye height above `origin`, facing `yaw`. Called by the owning `SUCC` from `_process`.
 
 ### `handle_input(event: InputEvent, config: SUCCConfig) -> void`
 Processes mouse motion. Called by the owning `SUCC` from `_unhandled_input`.

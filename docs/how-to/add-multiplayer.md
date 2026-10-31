@@ -75,7 +75,7 @@ func _physics_process(delta: float) -> void:
 		return
 	pawn.synced_position = global_position
 	pawn.synced_yaw = rotation.y
-	pawn.synced_pitch = camera_rig.rotation.x
+	pawn.synced_pitch = camera_rig.pitch
 	pawn.synced_velocity = velocity
 	pawn.synced_movement_state = movement_state
 	pawn.synced_game_state = game_state

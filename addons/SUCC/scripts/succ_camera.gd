@@ -17,19 +17,33 @@ const PITCH_LIMIT_DEG: float = 89.0
 @export var yaw_target: Node3D
 
 
+## Radians; the view's rotation.x, kept as a scalar so view tilt cannot flip it at the limit.
+var pitch: float = 0.0
+
 var _accumulated: Vector2 = Vector2.ZERO
-var _physics_offset: Vector3 = Vector3.ZERO
+var _yaw: float = 0.0
+var _roll: float = 0.0
 var _step_offset: float = 0.0
 var _bob_offset: float = 0.0
 var _bob_time: float = 0.0
 
 @onready var camera: Camera3D = _find_camera()
-# Eye height before bob and step offsets. A SpringArm3D overwrites its child
-# camera's transform every frame, so the offsets have to move the arm itself.
-@onready var view_height: float = position.y:
-	set(value):
-		view_height = value
-		_apply_offsets()
+# Eye height before bob and step offsets.
+@onready var view_height: float = position.y
+
+
+func _ready() -> void:
+	pitch = rotation.x
+	# The owner places this every frame from its interpolated origin.
+	top_level = true
+
+
+func place(origin: Vector3, yaw: float) -> void:
+	_yaw = yaw
+	global_transform = Transform3D(
+		Basis.from_euler(Vector3(pitch, yaw, _roll)),
+		origin + Vector3.UP * (view_height + _step_offset + _bob_offset),
+	)
 
 
 func _find_camera() -> Camera3D:
@@ -44,27 +58,18 @@ func _find_camera() -> Camera3D:
 
 func set_step_offset(offset: float) -> void:
 	_step_offset = offset
-	_apply_offsets()
-
-
-func set_physics_offset(offset: Vector3) -> void:
-	_physics_offset = offset
-	_apply_offsets()
 
 
 # Quake V_CalcBob: a sine over a fixed cycle, scaled by horizontal speed.
 func update_bob(delta: float, horizontal_speed: float, grounded: bool,
 		config: SUCCConfig) -> void:
 	if config.bob_amount <= 0.0:
-		if not is_zero_approx(_bob_offset):
-			_bob_offset = 0.0
-			_apply_offsets()
+		_bob_offset = 0.0
 		return
 
 	# Airborne bob would fight the jump arc, so ease it out instead of freezing it.
 	if not grounded:
 		_bob_offset = move_toward(_bob_offset, 0.0, config.bob_max * 4.0 * delta)
-		_apply_offsets()
 		return
 
 	_bob_time = fmod(_bob_time + delta, config.bob_cycle)
@@ -77,31 +82,21 @@ func update_bob(delta: float, horizontal_speed: float, grounded: bool,
 	var bob: float = horizontal_speed * config.bob_amount
 	bob = bob * 0.3 + bob * 0.7 * sin(cycle)
 	_bob_offset = clampf(bob, -config.bob_max, config.bob_max)
-	_apply_offsets()
 
 
 # Quake V_CalcRoll: tilt proportional to sideways velocity, capped at tilt_angle.
-# Positive rotation.z leans left, so strafing right needs a negative angle.
+# Positive roll leans left, so strafing right needs a negative angle.
 func update_tilt(delta: float, velocity: Vector3, config: SUCCConfig) -> void:
 	if config.tilt_angle <= 0.0:
-		if not is_zero_approx(rotation.z):
-			rotation.z = move_toward(rotation.z, 0.0, deg_to_rad(60.0) * delta)
+		_roll = move_toward(_roll, 0.0, deg_to_rad(60.0) * delta)
 		return
-	var side: float = velocity.dot(global_transform.basis.x)
+	var side: float = velocity.dot(Vector3.RIGHT.rotated(Vector3.UP, _yaw))
 	var lean: float = 1.0 if side < 0.0 else -1.0
 	side = absf(side)
 	var value: float = config.tilt_angle
 	if side < config.tilt_speed:
 		value = side * value / config.tilt_speed
-	rotation.z = deg_to_rad(value * lean)
-
-
-func _apply_offsets() -> void:
-	position = _physics_offset + Vector3(
-		0.0,
-		view_height + _step_offset + _bob_offset,
-		0.0,
-	)
+	_roll = deg_to_rad(value * lean)
 
 
 func handle_input(event: InputEvent, config: SUCCConfig) -> void:
@@ -132,11 +127,11 @@ func _apply_rotation() -> void:
 	body.orthonormalize()
 
 	var invert: float = -1.0 if invert_mouse_y else 1.0
-	rotate_object_local(Vector3.RIGHT, invert * -_accumulated.y)
-	rotation.x = clampf(
-		rotation.x, deg_to_rad(-PITCH_LIMIT_DEG), deg_to_rad(PITCH_LIMIT_DEG)
+	pitch = clampf(
+		pitch - invert * _accumulated.y,
+		deg_to_rad(-PITCH_LIMIT_DEG),
+		deg_to_rad(PITCH_LIMIT_DEG),
 	)
-	orthonormalize()
 	_accumulated = Vector2.ZERO
 
 

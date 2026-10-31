@@ -73,8 +73,13 @@ var crouched: bool = false
 var was_on_floor: bool = false
 ## Normal of the floor or ramp underfoot; Vector3.UP when airborne.
 var ground_normal: Vector3 = Vector3.UP
+## When set, simulate() reads this instead of Input.
+var command: SUCCInput = null
 
 var _action_available: Dictionary[String, bool] = {}
+var _jump_held: bool = false
+var _pending_impulse: Vector3 = Vector3.ZERO
+var _keep_floor_type_once: bool = false
 var _crouch_tween: Tween
 # Source FinishDuck raises the origin for an air duck; tracked so the unduck
 # drops it again and a landing can absorb it.
@@ -85,12 +90,11 @@ var _view_offset: float = 0.0
 var _previous_view_offset: float = 0.0
 var _visual_step_offset: float = 0.0
 var _previous_visual_step_offset: float = 0.0
-var _visual_root_base_y: float = 0.0
+var _visual_root_base: Transform3D = Transform3D.IDENTITY
 var _step_smoothing_grade: float = 0.0
 var _skip_step_probe_once: bool = false
 var _previous_physics_position: Vector3 = Vector3.ZERO
 var _current_physics_position: Vector3 = Vector3.ZERO
-var _manual_camera_interpolation: bool = false
 var _clearance_shape: BoxShape3D = BoxShape3D.new()
 var _clearance_params: PhysicsShapeQueryParameters3D = PhysicsShapeQueryParameters3D.new()
 
@@ -102,7 +106,10 @@ var _clearance_params: PhysicsShapeQueryParameters3D = PhysicsShapeQueryParamete
 func _ready() -> void:
 	if collision == null:
 		push_error("SUCC: missing child CollisionShape3D named 'Collision'.")
-	if camera_rig == null:
+	elif collision.shape:
+		# Instances of one scene share its shapes, and crouching resizes this one.
+		collision.shape = collision.shape.duplicate()
+	if camera_rig == null and _is_local_viewer():
 		push_error("SUCC: missing child SUCCCamera named 'CameraRig'.")
 	if config == null:
 		config = load("res://addons/SUCC/resources/default_config.tres") as SUCCConfig
@@ -117,27 +124,25 @@ func _ready() -> void:
 	floor_block_on_wall = false
 	camera_mode = default_camera_mode
 	if visual_root:
-		_visual_root_base_y = visual_root.position.y
+		_visual_root_base = visual_root.transform
+		visual_root.top_level = true
 	apply_config()
-
-	if is_multiplayer_authority():
-		if camera_rig:
-			camera_rig.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-		if visual_root:
-			visual_root.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-		_manual_camera_interpolation = not bool(
-			ProjectSettings.get_setting("physics/common/physics_interpolation", false)
-		)
-		_reset_manual_camera_interpolation()
-		# No user gesture has happened yet on web, so capturing here is rejected and
-		# Firefox never recovers. The first click captures instead.
-		if OS.has_feature("web"):
-			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-		else:
-			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-	else:
-		if camera_rig:
+	# Placed from the interpolated origin each frame, which also keeps look free of tick lag.
+	if camera_rig:
+		camera_rig.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	if visual_root:
+		visual_root.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	_reset_manual_camera_interpolation()
+	if not _is_local_viewer():
+		if camera_rig and camera_rig.camera:
 			camera_rig.camera.current = false
+		return
+	# No user gesture has happened yet on web, so capturing here is rejected and
+	# Firefox never recovers. The first click captures instead.
+	if OS.has_feature("web"):
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	else:
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
 # Call after swapping config.
@@ -158,7 +163,6 @@ func apply_config() -> void:
 	_previous_visual_step_offset = 0.0
 	_step_smoothing_grade = config.step_height / _step_run_estimate()
 	_skip_step_probe_once = false
-	_set_visual_step_offset(0.0)
 	if camera_rig:
 		camera_rig.set_step_offset(0.0)
 		camera_rig.view_height = config.standing_view_offset
@@ -170,8 +174,71 @@ func reset_camera_interpolation() -> void:
 	_reset_manual_camera_interpolation()
 
 
+func teleport(new_transform: Transform3D) -> void:
+	global_transform = new_transform
+	_pending_impulse = Vector3.ZERO
+	reset_camera_interpolation()
+
+
+# Applied at the start of the next simulated tick.
+func add_impulse(impulse: Vector3) -> void:
+	_pending_impulse += impulse
+
+
+func read_local_input() -> SUCCInput:
+	var input: SUCCInput = SUCCInput.new()
+	input.move = _local_move_input()
+	input.jump = _action_pressed("jump")
+	input.crouch = _action_pressed("crouch")
+	input.sprint = _action_pressed("sprint")
+	input.yaw = rotation.y
+	input.pitch = camera_rig.pitch if camera_rig else 0.0
+	return input
+
+
+func get_move_state() -> SUCCMoveState:
+	var state: SUCCMoveState = SUCCMoveState.new()
+	state.position = global_position
+	state.velocity = velocity
+	state.yaw = rotation.y
+	state.crouched = crouched
+	state.air_crouch_raised = _air_crouch_raised
+	state.air_crouch_raise = _air_crouch_raise
+	state.was_on_floor = was_on_floor
+	state.on_floor = is_on_floor()
+	state.floor_type = floor_type
+	state.ground_normal = ground_normal
+	state.skip_step_probe_once = _skip_step_probe_once
+	state.jump_held = _jump_held
+	state.impulse = _pending_impulse
+	state.movement_state = movement_state
+	return state
+
+
+# View offsets are left alone so a replay eases the camera from where it is.
+func set_move_state(state: SUCCMoveState) -> void:
+	_set_yaw(state.yaw)
+	velocity = state.velocity
+	crouched = state.crouched
+	_apply_collider_size(config.crouch_height if crouched else config.stand_height)
+	_air_crouch_raised = state.air_crouch_raised
+	_air_crouch_raise = state.air_crouch_raise
+	was_on_floor = state.was_on_floor
+	floor_type = state.floor_type
+	ground_normal = state.ground_normal
+	_skip_step_probe_once = state.skip_step_probe_once
+	_jump_held = state.jump_held
+	_pending_impulse = state.impulse
+	movement_state = state.movement_state
+	global_position = state.position
+	_restore_floor_contact(state.on_floor)
+	global_position = state.position
+	# The slide contacts that classified this floor_type cannot be restored.
+	_keep_floor_type_once = true
+
+
 func _unhandled_input(event: InputEvent) -> void:
-	if not is_multiplayer_authority():
+	if not _is_local_viewer():
 		return
 	if _can_look() and camera_rig:
 		camera_rig.handle_input(event, config)
@@ -187,20 +254,47 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _gather_movement_input() -> void:
-	var fwd: float = _action_strength("forward")
-	var back: float = _action_strength("back")
-	var left: float = _action_strength("left")
-	var right: float = _action_strength("right")
-	move_input = Vector2(right - left, back - fwd).normalized()
-
-	wish_sprint = _action_pressed("sprint")
 	var buffered: bool = enable_bhop and config.bhop_buffered_jump
-	wish_jump = _action_pressed("jump") if buffered else _action_just_pressed("jump")
-	wish_crouch = _action_pressed("crouch")
+	var jump_held: bool = false
+	if command:
+		_apply_command_view()
+		move_input = command.move if command.move.is_finite() else Vector2.ZERO
+		wish_sprint = command.sprint
+		jump_held = command.jump
+		wish_jump = jump_held if buffered else (jump_held and not _jump_held)
+		wish_crouch = command.crouch
+	else:
+		move_input = _local_move_input()
+		wish_sprint = _action_pressed("sprint")
+		jump_held = _action_pressed("jump")
+		wish_jump = jump_held if buffered else _action_just_pressed("jump")
+		wish_crouch = _action_pressed("crouch")
+	_jump_held = jump_held
 
 	move_dir = Vector3(move_input.x, 0.0, move_input.y)
 	move_dir = move_dir.normalized() * _wish_speed()
 	move_dir = move_dir.rotated(Vector3.UP, global_rotation.y)
+
+
+func _local_move_input() -> Vector2:
+	var fwd: float = _action_strength("forward")
+	var back: float = _action_strength("back")
+	var left: float = _action_strength("left")
+	var right: float = _action_strength("right")
+	return Vector2(right - left, back - fwd).normalized()
+
+
+# Commands can arrive off the network, so non-finite angles are dropped.
+func _apply_command_view() -> void:
+	if is_finite(command.yaw):
+		_set_yaw(command.yaw)
+	if camera_rig and is_finite(command.pitch):
+		camera_rig.pitch = command.pitch
+
+
+# A rotation.y write re-derives scale from the basis, which drifts over many ticks.
+func _set_yaw(yaw: float) -> void:
+	basis = Basis(Vector3.UP, yaw)
 
 
 # Crouch and sprint scale the speed cap itself, not the acceleration rate.
@@ -213,8 +307,16 @@ func _wish_speed() -> float:
 
 
 func _physics_process(delta: float) -> void:
-	if not is_multiplayer_authority():
-		return
+	if _is_simulating():
+		simulate(delta)
+
+
+# Call inside a physics frame; move_and_slide uses the engine step, not delta.
+func simulate(delta: float) -> void:
+	var keep_floor_type: bool = _keep_floor_type_once
+	_keep_floor_type_once = false
+	var impulse: Vector3 = _pending_impulse
+	_pending_impulse = Vector3.ZERO
 	if global_position.is_equal_approx(_current_physics_position):
 		_previous_physics_position = _current_physics_position
 	else:
@@ -228,7 +330,13 @@ func _physics_process(delta: float) -> void:
 	_previous_view_offset = _view_offset
 	_previous_visual_step_offset = _visual_step_offset
 	_gather_movement_input()
-	_set_floor_type(delta)
+	if not keep_floor_type:
+		_set_floor_type(delta)
+	if impulse != Vector3.ZERO:
+		velocity += impulse
+		# A grounded tick zeroes velocity.y, so an upward shove must unground.
+		if impulse.y > 0.0:
+			floor_type = FloorType.NONE
 	_apply_gravity(delta)
 	_set_velocity(delta)
 	_clamp_velocity()
@@ -519,12 +627,17 @@ func _attempt_step_up(
 		flat_landing_only: bool) -> bool:
 	var clearance: float = config.step_height * 2.0 + FLOOR_COL_MARGIN
 	var above: Transform3D = global_transform.translated(Vector3.UP * clearance)
-	# The destination has to be clear at the raised height, or this is a wall.
-	if test_move(above, motion):
-		return false
+	var hit: KinematicCollision3D = KinematicCollision3D.new()
+	if test_move(above, motion, hit):
+		# Hugging a wall pushes motion into it, so step along the wall instead.
+		var wall: Vector3 = Vector3(hit.get_normal().x, 0.0, hit.get_normal().z)
+		if wall.is_zero_approx():
+			return false
+		motion = motion.slide(wall.normalized())
+		if motion.length() < 0.0001 or test_move(above, motion):
+			return false
 
 	var landed_at: Transform3D = above.translated(motion)
-	var hit: KinematicCollision3D = KinematicCollision3D.new()
 	# Trace past the original height so a descent ending flush still registers.
 	var descent: float = clearance + config.step_height + FLOOR_COL_MARGIN
 	if not test_move(landed_at, Vector3.DOWN * descent, hit):
@@ -666,37 +779,24 @@ func _absorb_view_shift(shift: float) -> void:
 
 
 func _apply_render_offsets() -> void:
+	# A body moved outside simulate, as a snapshot moves a remote player, has no step to blend
+	if not global_position.is_equal_approx(_current_physics_position):
+		_previous_physics_position = global_position
+		_current_physics_position = global_position
 	var fraction: float = Engine.get_physics_interpolation_fraction()
+	var origin: Vector3 = _previous_physics_position.lerp(_current_physics_position, fraction)
+	var yaw: float = global_rotation.y
 	if camera_rig:
-		var physics_offset: Vector3 = Vector3.ZERO
-		if _manual_camera_interpolation:
-			var render_position: Vector3 = _previous_physics_position.lerp(
-				_current_physics_position,
-				fraction,
-			)
-			physics_offset = global_basis.inverse() * (
-				render_position - global_position
-			)
-		camera_rig.set_physics_offset(physics_offset)
-		var eye_offset: float = lerpf(
-			_previous_view_offset,
-			_view_offset,
-			fraction,
-		)
-		camera_rig.set_step_offset(eye_offset)
+		camera_rig.set_step_offset(lerpf(_previous_view_offset, _view_offset, fraction))
+		camera_rig.place(origin, yaw)
 	if visual_root:
 		var model_offset: float = lerpf(
 			_previous_visual_step_offset,
 			_visual_step_offset,
 			fraction,
 		)
-		_set_visual_step_offset(model_offset)
-
-
-func _set_visual_step_offset(offset: float) -> void:
-	if visual_root == null:
-		return
-	visual_root.position.y = _visual_root_base_y + offset
+		visual_root.global_transform = Transform3D(Basis(Vector3.UP, yaw), origin) \
+			* _visual_root_base.translated(Vector3.UP * model_offset)
 
 
 func _step_run_estimate() -> float:
@@ -739,6 +839,19 @@ func _set_floor_type(_delta: float) -> void:
 		return
 	ground_normal = best
 	floor_type = FloorType.RAMP
+
+
+# Floor contact has no setter: a slide with an empty mask clears it and a snap sets it.
+func _restore_floor_contact(on_floor: bool) -> void:
+	var saved_velocity: Vector3 = velocity
+	var saved_mask: int = collision_mask
+	collision_mask = 0
+	velocity = Vector3.ZERO
+	move_and_slide()
+	collision_mask = saved_mask
+	if on_floor:
+		apply_floor_snap()
+	velocity = saved_velocity
 
 
 func _crouch() -> void:
@@ -885,8 +998,7 @@ func _update_movement_state() -> void:
 func _reset_manual_camera_interpolation() -> void:
 	_previous_physics_position = global_position
 	_current_physics_position = global_position
-	if camera_rig:
-		camera_rig.set_physics_offset(Vector3.ZERO)
+	_apply_render_offsets()
 
 
 func _set_movement_state(new_state: MovementState) -> void:
@@ -922,6 +1034,15 @@ func _can_move() -> bool:
 
 func _can_look() -> bool:
 	return game_state != GameState.DISABLED
+
+
+# Override to tick somewhere other than the authority, such as a dedicated server.
+func _is_simulating() -> bool:
+	return is_multiplayer_authority()
+
+
+func _is_local_viewer() -> bool:
+	return is_multiplayer_authority()
 
 
 func toggle_camera_mode() -> void:

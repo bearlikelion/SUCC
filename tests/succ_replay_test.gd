@@ -12,6 +12,7 @@ const TICKS: int = 420
 const IMPULSE_TICK: int = 252
 const IMPULSE: Vector3 = Vector3(3.0, 5.0, -2.0)
 const TOLERANCE: float = 0.0001
+const WALL_X: float = 50.0
 
 var _delta: float = 0.0
 var _failed: int = 0
@@ -26,6 +27,9 @@ func _initialize() -> void:
 func _run() -> void:
 	await _check_config("quake", QUAKE, true)
 	await _check_config("surfsup without bhop", SURFSUP, false)
+	await _check_wall_stairs("quake", QUAKE)
+	await _check_wall_stairs("surfsup", SURFSUP)
+	await _check_pitch_limit()
 	print("%s" % ("FAILED %d" % _failed if _failed > 0 else "ALL PASSED"))
 	quit(1 if _failed > 0 else 0)
 
@@ -76,6 +80,47 @@ func _check_config(label: String, config: SUCCConfig, bhop: bool) -> void:
 	_expect(local_input_matches, "%s read_local_input matches the commands" % label)
 	_expect_state(final, player.get_move_state(), "%s Input path matches commands" % label)
 
+	player.queue_free()
+	await process_frame
+
+
+# Issue #5: walking up stairs while pressed against a wall stalled on the first riser.
+func _check_wall_stairs(label: String, config: SUCCConfig) -> void:
+	var player: SUCC = _spawn(config, false)
+	player.position = Vector3(WALL_X - config.width * 0.5 - 0.01, 0.1, -6.0)
+	await physics_frame
+	var input: SUCCInput = SUCCInput.new()
+	input.move = Vector2(0.3, -1.0).normalized()
+	var highest: float = 0.0
+	for tick: int in 120:
+		await physics_frame
+		_step(player, input, -1)
+		highest = maxf(highest, player.global_position.y)
+	_expect(highest > 1.4, "%s climbs the stairs along a wall (%.2f)" % [label, highest])
+	player.queue_free()
+	await process_frame
+
+
+# Issue #6: looking straight up with view tilt flipped the view around.
+func _check_pitch_limit() -> void:
+	var player: SUCC = CHARACTER.instantiate()
+	player.config = QUAKE
+	player.position = Vector3(0.0, 0.1, 10.0)
+	root.add_child(player)
+	await physics_frame
+	var rig: SUCCCamera = player.camera_rig
+	var yaw: float = 0.7
+	for look_up: float in [-10.0, 10.0]:
+		rig.turn(Vector2(0.0, look_up))
+		rig.update_tilt(0.1, Vector3(-8.0, 0.0, 3.0), QUAKE)
+		rig.place(player.global_position, yaw)
+		var forward: Vector3 = -rig.global_basis.z
+		var body_forward: Vector3 = Vector3.FORWARD.rotated(Vector3.UP, yaw)
+		_expect(
+			is_equal_approx(absf(rig.pitch), deg_to_rad(SUCCCamera.PITCH_LIMIT_DEG)) \
+			and Vector3(forward.x, 0.0, forward.z).dot(body_forward) > 0.0,
+			"view stays facing forward at the pitch limit under tilt (%.0f)" % look_up
+		)
 	player.queue_free()
 	await process_frame
 
@@ -168,6 +213,7 @@ func _build_course() -> void:
 	_add_box(Vector3(200.0, 1.5, 6.4), Vector3(0.0, 0.75, -16.8), 0.0)
 	_add_slope(Vector3(0.0, 1.5, -20.0), Vector3(0.0, 0.0, -26.0))
 	_add_slope(Vector3(0.0, 0.0, -33.0), Vector3(0.0, 6.93, -37.0))
+	_add_box(Vector3(1.0, 4.0, 20.0), Vector3(WALL_X + 0.5, 2.0, -12.0), 0.0)
 
 
 func _add_slope(top_start: Vector3, top_end: Vector3) -> void:
